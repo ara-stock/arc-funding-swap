@@ -16,7 +16,10 @@ Perp funding is the largest recurring cash flow in crypto derivatives, and it is
 trader holding spot BTC and short BTC-PERP earns floating funding. With this contract they can lock
 in a fixed rate for the next few days. A trader who expects funding to rise takes the other side.
 
-**Live:** https://ara-stock.github.io/arc-funding-swap/ (Arc mainnet, chain 5042)
+**Live:** https://ara-stock.github.io/arc-funding-swap/ (Arc mainnet, chain 5042) ·
+[Hedge](https://ara-stock.github.io/arc-funding-swap/hedge.html) (fix the funding your perp earns or pays) ·
+[Predict](https://ara-stock.github.io/arc-funding-swap/predict.html) (take a view on funding) ·
+[How it works](https://ara-stock.github.io/arc-funding-swap/how.html)
 
 | Contract | Address |
 |---|---|
@@ -79,6 +82,11 @@ dispute window before a value can be used for settlement.
 src/FundingIndexOracle.sol   src/FundingRateSwap.sol   test/FundingRateSwap.t.sol
 script/Deploy.s.sol          publisher/publish.py      docs/ (the web app, GitHub Pages)
 ```
+
+The web app has no build step: `docs/index.html`, `hedge.html`, `predict.html` and `how.html` share
+`style.css`, `config.js` and `app.js` (an ES module; each page picks its code path from
+`<body data-page>`). The order ticket is duplicated in `hedge.html` and `predict.html`; keep the
+two in sync.
 
 ```sh
 forge test                                   # 13 tests incl. a payout-conservation fuzz test

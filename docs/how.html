@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How it works · Funding Swap</title>
+<meta name="description" content="How Funding Swap works: a fee that changes every hour, fixed for a week. Worked example, timeline, contracts, index rule and FAQ.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="how">
+<nav>
+  <div class="wrap">
+    <a class="brand" href="index.html"><i></i>Funding Swap</a>
+    <div class="links"><a href="index.html">Home</a><a href="hedge.html">Hedge</a><a href="predict.html">Predict</a><a href="how.html" aria-current="page">How it works</a><a href="https://github.com/ara-stock/arc-funding-swap">GitHub</a></div>
+    <button id="connect" class="ghost">Connect wallet</button>
+  </div>
+</nav>
+
+<header class="wrap">
+  <section style="padding-bottom:0">
+    <div class="kicker">How it works</div>
+    <h1>A fee that changes every hour, fixed for a week</h1>
+    <p class="lead">Perp funding is a fee that holders pay or earn every hour. Funding Swap fixes it, like switching an electricity bill from variable to fixed. The other side is a trader who thinks the fee will move their way.</p>
+  </section>
+</header>
+
+<main class="wrap">
+  <section id="steps">
+    <div class="kicker">Three steps</div>
+    <h2>Post, get taken, settle</h2>
+    <div class="grid3">
+      <div class="card step"><div class="n">1</div><h3>Post an offer</h3><p>Pick a market, a side, a fixed rate, a size (notional) and a term of 1 to 30 days. Your deposit is locked in the contract.</p></div>
+      <div class="card step"><div class="n">2</div><h3>Someone takes it</h3><p>A counterparty locks the same deposit. The swap starts at the next UTC midnight and runs for whole days.</p></div>
+      <div class="card step"><div class="n">3</div><h3>Anyone settles</h3><p>After the last day anyone can trigger settlement. The difference between actual and fixed funding moves to whoever was right, capped at the deposit.</p></div>
+    </div>
+  </section>
+
+  <section id="example">
+    <div class="kicker">Worked example</div>
+    <h2>10,000 USDC, 7 days, fixed 10% APR</h2>
+    <div class="card">
+      <p>Alice is short a 10,000 USDC HYPE perp and earns funding. She wants a predictable week, so she receives a fixed 10% APR. Bob thinks HYPE funding will run hot and pays fixed. Each deposits <b>15 USDC</b>.</p>
+      <div class="example">Fixed leg for the week: 10,000 × 10% ÷ 365 × 7 = <b>19.18 USDC</b>. Every 1% APR that funding misses 10% moves 10,000 × 1% ÷ 365 × 7 = <b>1.92 USDC</b>.</div>
+      <div class="scroll"><table class="ex-table">
+        <thead><tr><th>Funding averages</th><th>Actual leg</th><th>Swap payment</th><th>Alice's perp earned</th><th>Alice's week</th></tr></thead>
+        <tbody>
+          <tr><td>15% APR</td><td>28.77 USDC</td><td>Alice pays Bob 9.59</td><td>28.77</td><td><b>19.18 USDC</b></td></tr>
+          <tr><td>10% APR</td><td>19.18 USDC</td><td>nothing moves</td><td>19.18</td><td><b>19.18 USDC</b></td></tr>
+          <tr><td>5% APR</td><td>9.59 USDC</td><td>Bob pays Alice 9.59</td><td>9.59</td><td><b>19.18 USDC</b></td></tr>
+        </tbody>
+      </table></div>
+      <p class="sub" style="margin:12px 0 0">The payment is capped at the 15 USDC deposit, so a miss of more than about 7.8% APR is not fully covered. A bigger deposit covers a bigger miss.</p>
+    </div>
+  </section>
+
+  <section id="timeline">
+    <div class="kicker">Timeline of a swap</div>
+    <h2>From offer to payout</h2>
+    <ol class="timeline">
+      <li><b>Post</b>The maker's deposit is locked. They can cancel any time until it is taken; the offer also expires.</li>
+      <li><b>Taken</b>The taker locks the same deposit. Neither side can back out now.</li>
+      <li><b>Starts</b>At the next UTC midnight.</li>
+      <li><b>Runs N days</b>Hyperliquid funding accrues every hour; the oracle posts each finished day.</li>
+      <li><b>Settle</b>Anyone can call settle once the last day is posted. The difference moves to the winner.</li>
+      <li><b>Refund</b>If the oracle has not posted the last day 7 days after the end, both sides get their full deposit back.</li>
+    </ol>
+  </section>
+
+  <section id="trust">
+    <div class="kicker">Transparency</div>
+    <h2>Rules you can check</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Contracts (source-verified)</h3>
+        <ul class="clean">
+          <li>FundingIndexOracle · <a class="mono" id="aOracle" href="#"></a> · <a id="sOracle" href="#">Sourcify</a></li>
+          <li>FundingRateSwap · <a class="mono" id="aSwap" href="#"></a> · <a id="sSwap" href="#">Sourcify</a></li>
+          <li>No admin keys, no upgrades, no fees.</li>
+          <li>Code and tests: <a href="https://github.com/ara-stock/arc-funding-swap">github.com/ara-stock/arc-funding-swap</a></li>
+        </ul>
+      </div>
+      <div class="card" id="index-rule">
+        <h3>The funding index</h3>
+        <ul class="clean">
+          <li>Every value is the sum of Hyperliquid's public hourly funding for that UTC day. Anyone can recompute it (<a href="https://github.com/ara-stock/arc-funding-swap#index-rule">rule</a>).</li>
+          <li>The payment stamped at 00:00 UTC belongs to the day that just ended.</li>
+          <li>Append-only: a day can be posted once, only after it ends, and never changed.</li>
+          <li>Markets: HYPE, SOL, DOGE and BTC perps on Hyperliquid. The app only lists markets whose index is at most 2 days old.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:14px"><b>Experimental and unaudited.</b> Deposits are capped at 100 USDC per side and terms at 30 days. The index currently has a single publisher. Only use amounts you can afford to lose.</div>
+  </section>
+
+  <section id="faq">
+    <div class="kicker">FAQ</div>
+    <h2>Questions</h2>
+    <div class="card faq">
+      <details open><summary>What if nobody takes my offer?</summary><p>Cancel it any time and your deposit comes straight back. Offers also expire after the time you set (24 hours by default); you can cancel an expired offer the same way.</p></details>
+      <details><summary>What if the oracle stops posting?</summary><p>If the final day of a swap has not been posted 7 days after the swap ends, either side can call refund and both get their full deposit back.</p></details>
+      <details><summary>Who can change the contract?</summary><p>Nobody. There is no admin key and no upgrade path, and the contract takes no fee. The source is verified on Sourcify.</p></details>
+      <details><summary>Do I need a Hyperliquid account?</summary><p>No. The swap only reads Hyperliquid's funding numbers. To hedge, you would hold the perp there; to predict, you only need USDC on Arc.</p></details>
+      <details><summary>What can I lose?</summary><p>At most your deposit. The payment between the two sides is capped at the deposit, which is itself capped at 100 USDC.</p></details>
+    </div>
+  </section>
+
+  <section>
+    <div class="doors">
+      <a class="door" href="hedge.html"><span class="ico">🔒</span><b>Hedge a perp</b><span>Fix the funding your position earns or pays.</span><span class="go">Hedge →</span></a>
+      <a class="door" href="predict.html"><span class="ico">📈</span><b>Predict funding</b><span>Win if funding averages above or below your rate.</span><span class="go">Predict →</span></a>
+    </div>
+  </section>
+</main>
+
+<footer class="wrap">Funding Swap on Arc · MIT · Not affiliated with Hyperliquid or Circle · <a href="https://github.com/ara-stock/arc-funding-swap">Source</a> · <a href="how.html">How it works</a></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>

@@ -4,150 +4,14 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Funding Swap on Arc</title>
-<meta name="description" content="Lock in perpetual funding, or take the other side. Peer-to-peer fixed-for-floating swaps on Hyperliquid perp funding, settled in USDC on Arc mainnet.">
-<style>
-  :root {
-    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --ink:#0f172a; --ink-2:#475569; --mute:#64748b;
-    --line:#e2e8f0; --grid:#e8ecf1; --acc:#1d4ed8; --acc-ink:#ffffff; --acc-soft:#e8efff;
-    --pos:#2a78d6; --neg:#e34948; --warn-bg:#fff7ed; --warn-line:#f59e0b; --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.05);
-  }
-  @media (prefers-color-scheme: dark) {
-    :root:not([data-theme="light"]) {
-      --bg:#0f1115; --surface:#16181d; --surface-2:#1d2027; --ink:#e8ebf0; --ink-2:#b4bccb; --mute:#8a93a3;
-      --line:#2a2e37; --grid:#242831; --acc:#6b93ff; --acc-ink:#0f1115; --acc-soft:#1c2540;
-      --pos:#3987e5; --neg:#e66767; --warn-bg:#231a0e; --warn-line:#d58a12; --shadow:none;
-    }
-  }
-  * { box-sizing:border-box; }
-  html { scroll-behavior:smooth; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
-  a { color:var(--acc); text-decoration:none; } a:hover { text-decoration:underline; }
-  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
-  nav { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
-  nav .wrap { display:flex; align-items:center; gap:20px; height:56px; }
-  .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); display:flex; align-items:center; gap:8px; }
-  .brand i { display:inline-block; width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg,var(--pos),var(--acc)); }
-  nav .links { display:flex; gap:18px; margin-left:auto; font-size:14px; }
-  nav .links a { color:var(--ink-2); }
-  @media (max-width:720px) { nav .links { display:none; } }
-  button, .btn { font:inherit; font-weight:600; font-size:14px; border-radius:8px; padding:9px 16px; cursor:pointer; border:1px solid var(--acc); background:var(--acc); color:var(--acc-ink); display:inline-block; }
-  .btn.ghost, button.ghost { background:transparent; color:var(--acc); }
-  button:disabled { opacity:.45; cursor:default; }
-  section { padding:44px 0 8px; }
-  h1 { font-size:clamp(30px,5vw,46px); line-height:1.1; letter-spacing:-.02em; margin:0 0 14px; }
-  h2 { font-size:24px; letter-spacing:-.01em; margin:0 0 6px; }
-  .lead { font-size:18px; color:var(--ink-2); max-width:680px; margin:0 0 22px; }
-  .kicker { font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--acc); margin-bottom:10px; }
-  .sub { color:var(--ink-2); margin:0 0 18px; max-width:720px; }
-  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; box-shadow:var(--shadow); }
-  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
-  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
-  .tile .label { font-size:13px; color:var(--mute); }
-  .tile .value { font-size:28px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; margin:2px 0; }
-  .tile .note { font-size:13px; color:var(--ink-2); }
-  .step { position:relative; }
-  .step .n { width:28px; height:28px; border-radius:50%; background:var(--acc-soft); color:var(--acc); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px; margin-bottom:10px; }
-  .step h3, .card h3 { margin:0 0 6px; font-size:17px; }
-  .step p, .card p { margin:0; color:var(--ink-2); font-size:15px; }
-  .example { margin-top:14px; background:var(--surface-2); border-radius:10px; padding:16px 18px; font-size:15px; }
-  .example b { font-variant-numeric:tabular-nums; }
-  .flow { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin-top:6px; }
-  .party { background:var(--surface-2); border-radius:10px; padding:12px 14px; font-size:14px; }
-  .party b { display:block; font-size:15px; }
-  .arrow { color:var(--mute); font-size:13px; text-align:center; }
-  @media (max-width:640px) { .flow { grid-template-columns:1fr; } .arrow { transform:rotate(90deg); } }
-  /* chart */
-  .chart-wrap { position:relative; }
-  svg.chart { width:100%; height:260px; display:block; }
-  .tip { position:absolute; pointer-events:none; background:var(--ink); color:var(--bg); font-size:13px; padding:6px 9px; border-radius:6px; white-space:nowrap; opacity:0; transition:opacity .08s; font-variant-numeric:tabular-nums; }
-  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--ink-2); margin-top:8px; }
-  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; background:var(--c); }
-  .legend .line::before { height:2px; width:14px; vertical-align:3px; border-radius:1px; }
-  /* tables */
-  .tbl { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
-  .tbl th { text-align:left; color:var(--mute); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; padding:8px 10px 8px 0; border-bottom:1px solid var(--line); }
-  .tbl td { padding:10px 10px 10px 0; border-bottom:1px solid var(--line); vertical-align:middle; }
-  .scroll { overflow-x:auto; }
-  .pill { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--ink-2); }
-  .pill.open { background:var(--acc-soft); color:var(--acc); }
-  .empty { text-align:center; padding:28px 10px; color:var(--ink-2); }
-  /* form */
-  .form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
-  label { font-size:13px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:4px; }
-  .hint { font-size:12px; color:var(--mute); margin-top:3px; }
-  input, select { font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); width:100%; }
-  input:focus, select:focus { outline:2px solid var(--acc-soft); border-color:var(--acc); }
-  .summary { margin-top:16px; background:var(--surface-2); border-radius:10px; padding:16px 18px; }
-  .summary p { margin:0 0 8px; color:var(--ink); }
-  .scen { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; margin-top:6px; }
-  .scen td { padding:5px 0; border-top:1px solid var(--line); } .scen td:last-child { text-align:right; font-weight:600; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:16px; }
-  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; }
-  .warn { background:var(--warn-bg); border:1px solid var(--line); border-left:4px solid var(--warn-line); border-radius:10px; padding:14px 16px; font-size:14px; color:var(--ink-2); }
-  ul.clean { margin:0; padding-left:18px; color:var(--ink-2); font-size:15px; } ul.clean li { margin:4px 0; }
-  #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--mute); max-height:140px; overflow:auto; margin:0; }
-
-  /* order ticket */
-  .q { display:grid; grid-template-columns:32px 1fr; gap:14px; padding:18px 0; border-top:1px solid var(--line); }
-  .q:first-child { border-top:0; padding-top:4px; }
-  .qn { width:28px; height:28px; border-radius:50%; background:var(--acc); color:var(--acc-ink); font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; }
-  .qtitle { font-weight:700; font-size:16px; margin:2px 0 10px; }
-  .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
-  .choice { text-align:left; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; font-weight:400; }
-  .choice b { display:block; font-size:16px; margin-bottom:3px; }
-  .choice span { color:var(--ink-2); font-size:14px; }
-  .choice[aria-pressed="true"] { border-color:var(--acc); background:var(--acc-soft); box-shadow:0 0 0 1px var(--acc) inset; }
-  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
-  .chip { background:var(--surface-2); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; }
-  .chip[aria-pressed="true"] { background:var(--acc-soft); color:var(--acc); border-color:var(--acc); }
-  .inrow { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
-  .unit { position:relative; } .unit input { padding-right:64px; } .unit i { position:absolute; right:12px; top:10px; font-style:normal; color:var(--mute); font-size:14px; }
-  details { margin-top:6px; } summary { cursor:pointer; color:var(--ink-2); font-size:14px; font-weight:600; }
-  .checks { display:flex; flex-wrap:wrap; gap:8px 18px; font-size:13px; color:var(--ink-2); margin-top:14px; }
-  .checks span::before { content:"○"; margin-right:6px; color:var(--mute); }
-  .checks span.ok::before { content:"✓"; color:var(--pos); font-weight:700; }
-  .checks span.bad::before { content:"!"; color:var(--neg); font-weight:700; }
-  .action { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
-  .action button { padding:12px 22px; font-size:15px; }
-
-  .choice em { font-style:normal; font-weight:800; font-size:13px; letter-spacing:.08em; display:inline-block; padding:2px 8px; border-radius:6px; margin-bottom:8px; color:#fff; }
-  .choice em { background:var(--ink); color:var(--bg); }
-  .choice[aria-pressed="true"] em { background:var(--acc); color:var(--acc-ink); }
-  svg.payoff { width:100%; height:220px; display:block; margin:6px 0 4px; }
-
-  .live { display:flex; flex-wrap:wrap; gap:8px 22px; align-items:baseline; margin:2px 0 10px; }
-  .live .big { font-size:26px; font-weight:800; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
-  .live .lbl { font-size:12px; color:var(--mute); display:block; }
-  .live .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--pos); margin-right:6px; animation:pulse 1.6s infinite; }
-  @keyframes pulse { 50% { opacity:.3; } }
-  .slider { background:var(--surface-2); border-radius:12px; padding:14px 16px; margin-top:12px; }
-  .sliderhead { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
-  .sliderhead span { color:var(--ink-2); font-size:14px; font-weight:600; }
-  .sliderhead b { font-size:22px; font-variant-numeric:tabular-nums; color:var(--acc); }
-  input[type=range] { width:100%; accent-color:var(--acc); padding:0; border:0; background:transparent; height:28px; }
-  .sliderscale { display:flex; justify-content:space-between; font-size:11px; color:var(--mute); margin-top:-2px; }
-  .hl { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .hl .choice { text-align:center; padding:18px 14px; }
-  .hl .choice em { font-size:15px; padding:4px 12px; }
-  @media (max-width:560px) { .hl { grid-template-columns:1fr; } }
-  @media (max-width:560px) { .q { grid-template-columns:1fr; } .q .qn { margin-bottom:4px; } }
-  .goals { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-  .goalgrp { grid-column:1/-1; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); margin-top:4px; }
-  @media (max-width:560px) { .goals { grid-template-columns:1fr; } }
-  .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px; }
-  .tiers .choice { text-align:center; padding:12px 10px; }
-  @media (max-width:560px) { .tiers { grid-template-columns:1fr; } }
-  .chip small { display:block; font-size:11px; font-weight:400; color:var(--mute); }
-  .chips.big .chip { padding:9px 16px; font-size:14px; }
-  footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
-  .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
-</style>
+<meta name="description" content="Perp funding is a fee that changes every hour. Fix it for a week: peer-to-peer fixed-for-floating swaps on Hyperliquid perp funding, settled in USDC on Arc mainnet.">
+<link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body data-page="home">
 <nav>
   <div class="wrap">
-    <a class="brand" href="#"><i></i>Funding Swap</a>
-    <div class="links"><a href="#how">How it works</a><a href="#market">Market</a><a href="#offers">Offers</a><a href="#trust">Transparency</a><a href="https://github.com/ara-stock/arc-funding-swap">GitHub</a></div>
+    <a class="brand" href="index.html"><i></i>Funding Swap</a>
+    <div class="links"><a href="index.html" aria-current="page">Home</a><a href="hedge.html">Hedge</a><a href="predict.html">Predict</a><a href="how.html">How it works</a><a href="https://github.com/ara-stock/arc-funding-swap">GitHub</a></div>
     <button id="connect" class="ghost">Connect wallet</button>
   </div>
 </nav>
@@ -155,643 +19,135 @@
 <header class="wrap">
   <section>
     <div class="kicker">Live on Arc mainnet · settled in USDC</div>
-    <h1>Lock in perp funding.<br>Or take the other side.</h1>
-    <p class="lead">Perpetual funding pays traders every hour, but the rate swings. Funding Swap lets two people trade a <b>fixed</b> funding rate for the <b>actual</b> one on Hyperliquid BTC‑PERP, with no intermediary. The contract holds both deposits and pays the winner automatically.</p>
-    <div class="row" style="margin:0 0 26px"><a class="btn" href="#create">Create an offer</a><a class="btn ghost" href="#how">How it works</a></div>
-    <div class="grid3">
-      <div class="card tile"><div class="label">Yesterday's <span class="mname">BTC</span> funding</div><div class="value" id="kLast">–</div><div class="note" id="kLastNote">per day</div></div>
-      <div class="card tile"><div class="label">7‑day average</div><div class="value" id="k7">–</div><div class="note" id="k7Note">annualised</div></div>
-      <div class="card tile"><div class="label">Recorded on‑chain since Arc launch</div><div class="value" id="kDays">–</div><div class="note">days of verifiable funding data</div></div>
-    </div>
+    <h1>Perp funding is a fee that changes every hour. Fix it for a week.</h1>
+    <p class="lead">Anyone holding a Hyperliquid perp pays or earns funding, a fee that resets every hour and can double or vanish in days. Funding Swap lets you swap that moving fee for one fixed rate on HYPE, SOL, DOGE or BTC for 1 to 30 days. The other side is a trader who thinks the fee will move your way. Both deposit USDC on Arc; the contract pays the difference to whoever was right.</p>
+    <div class="row" style="margin:0"><a class="btn" href="hedge.html">Hedge my perp</a><a class="btn ghost" href="predict.html">Predict funding</a></div>
   </section>
 </header>
 
 <main class="wrap">
-  <section id="how">
-    <div class="kicker">How it works</div>
-    <h2>Three steps, one rule</h2>
-    <p class="sub">One side pays a fixed rate and receives the actual funding; the other side does the opposite. Over the term, whoever was right gets paid from the other's deposit.</p>
+  <section id="story">
+    <div class="kicker">The idea in four pictures</div>
+    <h2>Like switching a power bill from variable to fixed</h2>
+    <p class="sub">Example: a 10,000 USDC short HYPE perp, held for 7 days, swapped at a fixed 10% APR.</p>
+    <div class="story">
+  <figure><svg viewBox="0 0 320 200" role="img" aria-label="A short HYPE perp position of 10,000 USDC earns funding every hour; daily amounts vary and the weekly average is unknown.">
+  <defs><marker id="ah1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <rect class="bx" x="60" y="8" width="200" height="54" rx="10"/>
+  <text class="t tb" x="160" y="31" text-anchor="middle">Your short HYPE perp</text>
+  <text class="t2" x="160" y="52" text-anchor="middle">10,000 USDC</text>
+  <rect class="bar" x="30" y="148" width="18" height="40" rx="2"/><rect class="bar" x="58" y="126" width="18" height="62" rx="2"/><rect class="bar" x="86" y="160" width="18" height="28" rx="2"/><rect class="bar" x="114" y="118" width="18" height="70" rx="2"/><rect class="bar" x="142" y="143" width="18" height="45" rx="2"/><rect class="bar" x="170" y="168" width="18" height="20" rx="2"/><rect class="bar" x="198" y="133" width="18" height="55" rx="2"/>
+  <line class="ln" x1="22" x2="224" y1="188" y2="188"/>
+  <line class="ln dash" x1="22" x2="224" y1="142" y2="142"/>
+  <text class="t2 tb" x="230" y="147">avg ?</text>
+  <line class="ln" x1="150" y1="112" x2="150" y2="68" marker-end="url(#ah1)"/>
+  <text class="t2" x="158" y="96">funding, paid hourly</text>
+</svg><figcaption><b class="n">1</b>You earn a fee, but you don't know how much.<span class="sub2">Funding resets every hour. Over a week it can double or vanish.</span></figcaption></figure>
+  <figure><svg viewBox="0 0 320 200" role="img" aria-label="Two possible weeks: funding averaging 15% pays 28.77 USDC, funding averaging 5% pays 9.59 USDC.">
+  <text class="t2" x="80" y="22" text-anchor="middle">a busy week</text>
+  <rect class="bar" x="22" y="80" width="12" height="70" rx="2"/><rect class="bar" x="39" y="55" width="12" height="95" rx="2"/><rect class="bar" x="56" y="70" width="12" height="80" rx="2"/><rect class="bar" x="73" y="45" width="12" height="105" rx="2"/><rect class="bar" x="90" y="62" width="12" height="88" rx="2"/><rect class="bar" x="107" y="75" width="12" height="75" rx="2"/><rect class="bar" x="124" y="52" width="12" height="98" rx="2"/>
+  <line class="ln" x1="16" x2="144" y1="150" y2="150"/>
+  <text class="t tb" x="80" y="178" text-anchor="middle">15% → 28.77 USDC</text>
+  <line class="ln dash" x1="160" x2="160" y1="14" y2="186"/>
+  <text class="t2" x="240" y="22" text-anchor="middle">a quiet week</text>
+  <rect class="bar" x="182" y="128" width="12" height="22" rx="2"/><rect class="bar" x="199" y="115" width="12" height="35" rx="2"/><rect class="bar" x="216" y="132" width="12" height="18" rx="2"/><rect class="bar" x="233" y="120" width="12" height="30" rx="2"/><rect class="bar" x="250" y="124" width="12" height="26" rx="2"/><rect class="bar" x="267" y="135" width="12" height="15" rx="2"/><rect class="bar" x="284" y="122" width="12" height="28" rx="2"/>
+  <line class="ln" x1="176" x2="304" y1="150" y2="150"/>
+  <text class="t tb" x="240" y="178" text-anchor="middle">5% → 9.59 USDC</text>
+</svg><figcaption><b class="n">2</b>Your week pays 9.59 or 28.77. Nobody knows which.<span class="sub2">Without the swap, 10,000 USDC short for 7 days earns whatever funding happens to be.</span></figcaption></figure>
+  <figure><svg viewBox="0 0 320 200" role="img" aria-label="You and the other side each deposit 15 USDC in a contract on Arc. You pass on the actual funding and receive a fixed 10% APR, 19.18 USDC.">
+  <defs><marker id="ah3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <defs><marker id="ah3b" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ahacc" d="M0,0 L10,5 L0,10 z"/></marker></defs>
+  <circle class="bx" cx="40" cy="44" r="28"/>
+  <text class="t tb" x="40" y="49" text-anchor="middle">You</text>
+  <circle class="bx" cx="280" cy="44" r="28"/>
+  <text class="t tb" x="280" y="49" text-anchor="middle">Them</text>
+  <text class="t2" x="160" y="24" text-anchor="middle">actual funding</text>
+  <line class="ln" x1="74" y1="34" x2="244" y2="34" marker-end="url(#ah3)"/>
+  <line class="lacc" x1="246" y1="58" x2="76" y2="58" marker-end="url(#ah3b)"/>
+  <text class="t tb tacc" x="160" y="82" text-anchor="middle">fixed 10% APR = 19.18 USDC</text>
+  <path class="ln dash" d="M40,74 V156 H68"/>
+  <path class="ln dash" d="M280,74 V156 H252"/>
+  <rect class="bx" x="70" y="100" width="180" height="88" rx="10"/>
+  <text class="t tb" x="160" y="124" text-anchor="middle">Contract on Arc</text>
+  <rect class="coin" x="82" y="140" width="74" height="32" rx="16"/>
+  <text class="t" x="119" y="161" text-anchor="middle">15 USDC</text>
+  <rect class="coin" x="164" y="140" width="74" height="32" rx="16"/>
+  <text class="t" x="201" y="161" text-anchor="middle">15 USDC</text>
+</svg><figcaption><b class="n">3</b>You hand over the moving fee and receive a fixed one.<span class="sub2">Both sides deposit 15 USDC. The contract holds them until the week ends.</span></figcaption></figure>
+  <figure><svg viewBox="0 0 320 200" role="img" aria-label="If funding averages 5%, the contract pays you 9.59 and your perp earned 9.59. If it averages 15%, you pay 9.59 and your perp earned 28.77. Either way the total is 19.18 USDC.">
+  <rect class="zpos" x="12" y="28" width="148" height="132"/>
+  <rect class="zneg" x="160" y="28" width="148" height="132"/>
+  <text class="t tb tacc" x="160" y="19" text-anchor="middle">your fixed 10%</text>
+  <text class="t tb tpos" x="86" y="52" text-anchor="middle">avg 5%</text>
+  <text class="t" x="86" y="78" text-anchor="middle">swap pays +9.59</text>
+  <text class="t" x="86" y="100" text-anchor="middle">perp earns 9.59</text>
+  <line class="ln" x1="34" x2="138" y1="114" y2="114"/>
+  <text class="t tb" x="86" y="138" text-anchor="middle">total 19.18</text>
+  <text class="t tb tneg" x="234" y="52" text-anchor="middle">avg 15%</text>
+  <text class="t" x="234" y="78" text-anchor="middle">you pay 9.59</text>
+  <text class="t" x="234" y="100" text-anchor="middle">perp earns 28.77</text>
+  <line class="ln" x1="182" x2="286" y1="114" y2="114"/>
+  <text class="t tb" x="234" y="138" text-anchor="middle">total 19.18</text>
+  <line class="lacc" style="stroke-width:3" x1="160" x2="160" y1="26" y2="168"/>
+  <line class="ln" x1="12" x2="308" y1="168" y2="168"/>
+  <line class="ln" x1="86" x2="86" y1="164" y2="172"/>
+  <line class="ln" x1="234" x2="234" y1="164" y2="172"/>
+  <text class="t2" x="160" y="192" text-anchor="middle">avg funding this week →</text>
+</svg><figcaption><b class="n">4</b>Either way your week pays 19.18 USDC. The other side keeps the swing.<span class="sub2">The contract pays the difference to whoever was right, up to the deposit.</span></figcaption></figure>
+</div>
+  </section>
+
+  <section id="live">
+    <div class="kicker">Right now</div>
+    <h2>How much <span class="mname">HYPE</span> funding has moved</h2>
+    <p class="sub">Read from the funding index on Arc. Every value can be recomputed from Hyperliquid's public data.</p>
     <div class="grid3">
-      <div class="card step"><div class="n">1</div><h3>Post an offer</h3><p>Pick a side, a fixed rate per day, a size (notional) and a term. Your deposit (margin) is locked in the contract.</p></div>
-      <div class="card step"><div class="n">2</div><h3>Someone takes it</h3><p>A counterparty locks the same deposit. The swap starts at the next UTC midnight and runs for whole days.</p></div>
-      <div class="card step"><div class="n">3</div><h3>Automatic settlement</h3><p>At maturity anyone can trigger settlement. The difference between actual and fixed funding moves to the winner, capped at the deposit.</p></div>
-    </div>
-    <div class="card" style="margin-top:14px">
-      <h3>Worked example</h3>
-      <div class="flow">
-        <div class="party"><b>Alice pays fixed</b>0.025% per day · deposits 10 USDC</div>
-        <div class="arrow">⇄ 7 days on 1,000 USDC</div>
-        <div class="party"><b>Bob receives fixed</b>pays actual funding · deposits 10 USDC</div>
-      </div>
-      <div class="example">BTC funding actually averages <b>0.035%/day</b>. Over 7 days the actual leg is 1,000 × 0.245% = <b>2.45 USDC</b> and the fixed leg is 1,000 × 0.175% = <b>1.75 USDC</b>. Alice receives the difference, <b>0.70 USDC</b>, from Bob's deposit. If funding had averaged 0.015%/day, Bob would receive 0.70 USDC instead.</div>
-    </div>
-    <div class="grid2" style="margin-top:14px">
-      <div class="card"><h3>Basis traders: lock your yield</h3><p>Holding spot BTC and short the perp earns floating funding. Receive fixed to turn it into a predictable return for the next week.</p></div>
-      <div class="card"><h3>Funding views: express them directly</h3><p>Think funding will spike or collapse? Pay or receive fixed without taking any BTC price exposure.</p></div>
+      <div class="card tile"><div class="label">Yesterday's <span class="mname">HYPE</span> funding</div><div class="value" id="kLast">–</div><div class="note" id="kLastNote">per day</div></div>
+      <div class="card tile"><div class="label">7‑day average</div><div class="value" id="k7">–</div><div class="note" id="k7Note">annualised</div></div>
+      <div class="card tile"><div class="label">Recorded on‑chain since Arc launch</div><div class="value" id="kDays">–</div><div class="note">days of verifiable funding data</div></div>
     </div>
   </section>
 
   <section id="market">
     <div class="kicker">Market</div>
-    <h2>Hyperliquid <span class="mname">BTC</span>‑PERP funding, read from the chain</h2>
+    <h2>Hyperliquid <span class="mname">HYPE</span>‑PERP funding, read from the chain</h2>
     <div class="chips big" id="mktChips2" style="margin-bottom:12px"></div>
     <p class="sub">Each bar is one UTC day of funding, computed from the on‑chain index. Bars above zero mean longs paid shorts. Hover a bar for the exact value.</p>
     <div class="card">
-      <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily BTC funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
-      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span><span style="--c:color-mix(in srgb, var(--acc) 25%, transparent)">Your win zone (from the order form)</span></div>
+      <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
+      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span></div>
       <div class="row" style="justify-content:space-between;margin-top:10px"><span class="sub" style="margin:0;font-size:13px" id="chartNote">Loading on‑chain data…</span><button class="toggle" id="tblToggle">Show as table</button></div>
       <div class="scroll" id="tblWrap" hidden><table class="tbl"><thead><tr><th>Day (UTC)</th><th>Funding / day</th><th>Annualised</th></tr></thead><tbody id="tbl"></tbody></table></div>
     </div>
   </section>
 
-  <section id="offers">
-    <div class="kicker">Offers</div>
-    <h2>Open and active swaps</h2>
-    <p class="sub">Take an open offer to become the counterparty. You need the same deposit in USDC on Arc.</p>
-    <div class="card scroll">
-      <table class="tbl">
-        <thead><tr><th>#</th><th>Market</th><th>Maker</th><th>Maker position</th><th>Size</th><th>Deposit each</th><th>Term</th><th>Status</th><th></th></tr></thead>
-        <tbody id="swaps"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
-      </table>
-    </div>
-  </section>
-
-  <section id="create">
-    <div class="kicker">Create</div>
-    <h2>Make your call in three steps</h2>
-    <p class="sub">Pick what you want to do, check the rate, choose a size. Someone takes the other side, and the contract settles automatically. You can cancel any time before it is taken.</p>
-    <div class="card">
-      <div class="q"><div class="qn">1</div><div>
-        <div class="qtitle">What do you want to do?</div>
-        <div class="goals">
-          <div class="goalgrp">Protect a perp position</div>
-          <button class="choice" data-goal="lock" data-side="0" aria-pressed="true"><b>🔒 Lock in my funding income</b><span>You are short the perp and earn funding. Swap it for a fixed rate, so a drop in funding can't hurt you.</span></button>
-          <button class="choice" data-goal="cap" data-side="1" aria-pressed="false"><b>🛡️ Cap my funding cost</b><span>You are long the perp and pay funding. Pay a fixed rate instead, so a spike can't hurt you.</span></button>
-          <div class="goalgrp">Take a view</div>
-          <button class="choice" data-goal="up" data-side="1" aria-pressed="false"><b>📈 Funding will go up</b><span>You win if <span class="mname">BTC</span> funding averages above the rate in step 2.</span></button>
-          <button class="choice" data-goal="down" data-side="0" aria-pressed="false"><b>📉 Funding will go down</b><span>You win if <span class="mname">BTC</span> funding averages below the rate in step 2.</span></button>
-          <div class="goalgrp" id="mktLabel">Which market?</div>
-          <div class="chips big" id="mktChips" style="grid-column:1/-1;margin:0"></div>
-        </div>
-      </div></div>
-      <div class="q"><div class="qn">2</div><div>
-        <div class="qtitle">At what rate?</div>
-        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span><span class="mname">BTC</span> funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
-        <div class="tiers" id="tiers">
-          <button class="choice" data-tier="easy" aria-pressed="false"><b>⚡ Fill fast</b><span id="tEasy">–</span></button>
-          <button class="choice" data-tier="fair" aria-pressed="true"><b>⚖️ Fair</b><span id="tFair">–</span></button>
-          <button class="choice" data-tier="better" aria-pressed="false"><b>🎯 Better for me</b><span id="tBetter">–</span></button>
-        </div>
-        <div class="slider">
-          <div class="sliderhead"><span id="rateQ">Your fixed rate</span><b id="aprBig">9.0% APR</b></div>
-          <div class="hint" id="goalLine" style="margin:0;font-size:14px;color:var(--ink)"></div>
-          <details id="customRate"><summary>Choose an exact rate</summary>
-            <div class="chips" id="rateChips"></div>
-            <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
-            <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
-          </details>
-          <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
-        </div>
-        <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="d" aria-pressed="true">Since Arc launch (daily)</button><button class="chip" data-range="h48" aria-pressed="false">Last 48 hours (hourly)</button></div>
-        <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="BTC funding against your rate; shaded zone is where you win"></svg><div class="tip" id="ttip"></div></div>
-        <div class="hint">Shaded = where you win. Blue bars: hours (or days) you would have won, red: lost.</div>
-      </div></div>
-      <div class="q"><div class="qn">3</div><div>
-        <div class="inrow">
-          <div><div class="qtitle">How big?</div>
-            <div class="chips big" data-for="fNotional"><button class="chip" data-v="1000">$1k</button><button class="chip" data-v="10000">$10k</button><button class="chip" data-v="50000">$50k</button><button class="chip" data-v="100000">$100k</button></div>
-            <div class="hint">Funding is calculated on this amount. You only lock the deposit below (max 100 USDC).</div></div>
-          <div><div class="qtitle">For how long?</div>
-            <div class="chips big" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
-            <div class="hint">Starts at the next UTC midnight.</div></div>
-        </div>
-        <div class="slider">
-          <div class="sliderhead"><span>Deposit: the most you can lose (and win)</span><b id="marginBig">3 USDC</b></div>
-          <input type="range" id="marginRange" min="1" max="100" step="1" value="3" aria-label="Deposit in USDC">
-          <div class="hint" id="marginHint"></div>
-        </div>
-        <details><summary>Custom amounts</summary>
-          <div class="inrow" style="margin-top:10px">
-            <div><label for="fNotional">Size</label><div class="unit"><input id="fNotional" value="10000" inputmode="decimal"><i>USDC</i></div></div>
-            <div><label for="fTenor">Term</label><div class="unit"><input id="fTenor" value="7" inputmode="numeric"><i>days</i></div></div>
-            <div><label for="fMargin">Deposit</label><div class="unit"><input id="fMargin" value="3" inputmode="decimal"><i>USDC</i></div></div>
-            <div><label for="fExpiry">Offer open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
-          </div>
-        </details>
-      </div></div>
-      <div class="summary">
-        <p id="sumText"></p>
-        <div class="chart-wrap"><svg class="payoff" id="payoff" role="img" aria-label="Profit or loss versus average funding over the term"></svg><div class="tip" id="ptip"></div></div>
-        <table class="scen" id="scen"></table>
-      </div>
-      <div class="checks"><span id="cWallet">Wallet connected</span><span id="cChain">On Arc mainnet</span><span id="cBal">Enough USDC</span><span id="cAllow">Deposit approved</span></div>
-      <div class="action"><button id="actionBtn">Connect wallet</button><span class="sub" style="margin:0;font-size:14px" id="actionNote">Two quick signatures: approve the deposit, then post.</span></div>
+  <section id="start">
+    <div class="kicker">Start</div>
+    <h2>Which one are you?</h2>
+    <p class="sub">Both use the same contract. One side fixes the fee, the other takes the swing.</p>
+    <div class="doors">
+      <a class="door" href="hedge.html"><span class="ico">🔒</span><b>I hold a perp and want a predictable fee</b><span>Lock in the funding your short earns, or cap what your long pays, for 1 to 30 days.</span><span class="go">Hedge →</span></a>
+      <a class="door" href="predict.html"><span class="ico">📈</span><b>I have an opinion on where funding goes</b><span>Win if funding averages above or below a rate you pick. No price exposure, the most you can lose is your deposit.</span><span class="go">Predict →</span></a>
     </div>
   </section>
 
   <section id="trust">
-    <div class="kicker">Transparency</div>
-    <h2>Rules you can check</h2>
-    <div class="grid2">
-      <div class="card">
-        <h3>Contracts (source-verified)</h3>
-        <ul class="clean">
-          <li>FundingIndexOracle · <a class="mono" id="aOracle" href="#"></a> · <a id="sOracle" href="#">Sourcify</a></li>
-          <li>FundingRateSwap · <a class="mono" id="aSwap" href="#"></a> · <a id="sSwap" href="#">Sourcify</a></li>
-          <li>No admin keys, no upgrades, no fees.</li>
-          <li>Code and tests: <a href="https://github.com/ara-stock/arc-funding-swap">github.com/ara-stock/arc-funding-swap</a></li>
-        </ul>
-      </div>
-      <div class="card">
-        <h3>The funding index</h3>
-        <ul class="clean">
-          <li>Every value is the sum of Hyperliquid's public hourly funding for that day. Anyone can recompute it (<a href="https://github.com/ara-stock/arc-funding-swap#index-rule">rule</a>).</li>
-          <li>Append-only: a day can be posted once, only after it ends, and never changed.</li>
-          <li>If a maturity value is not posted within 7 days, both sides can reclaim their full deposit.</li>
-        </ul>
+    <div class="card">
+      <div class="strip">
+        <b style="color:var(--ink)">Rules you can check</b>
+        <span>Oracle <a class="mono" id="aOracle" href="#"></a> · <a id="sOracle" href="#">Sourcify</a></span>
+        <span>Swap <a class="mono" id="aSwap" href="#"></a> · <a id="sSwap" href="#">Sourcify</a></span>
+        <span>No admin, no upgrades, no fees.</span>
+        <a href="how.html#trust">More →</a>
       </div>
     </div>
-    <div class="warn" style="margin-top:14px"><b>Experimental and unaudited.</b> Deposits are capped at 100 USDC per side and terms at 30 days. The index currently has a single publisher. Only use amounts you can afford to lose.</div>
-  </section>
-
-  <section>
-    <div class="card"><h3 style="margin-bottom:6px">Activity</h3><pre id="log">Read-only until a wallet is connected.</pre></div>
   </section>
 </main>
 
-<footer class="wrap">Funding Swap on Arc · MIT · Not affiliated with Hyperliquid or Circle · <a href="https://github.com/ara-stock/arc-funding-swap">Source</a></footer>
+<footer class="wrap">Funding Swap on Arc · MIT · Not affiliated with Hyperliquid or Circle · <a href="https://github.com/ara-stock/arc-funding-swap">Source</a> · <a href="how.html">How it works</a></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script src="config.js"></script>
-<script>
-const { ethers } = window;
-const CFG = window.ARC_FUNDING_CONFIG;
-const ORACLE_ABI = ["function range(bytes32) view returns (uint64,uint64,bool)", "function indexAt(bytes32,uint64) view returns (int256)"];
-const SWAP_ABI = [
-  "function swapCount() view returns (uint256)",
-  "function getSwap(uint256) view returns (tuple(address maker,bool makerPaysFixed,bytes32 market,uint128 notional,uint128 margin,int256 fixedRatePerDay,uint64 tenorDays,uint64 offerExpiry,address taker,uint64 startDay,uint8 state))",
-  "function createOffer(bytes32,bool,uint128,uint128,int256,uint64,uint64) returns (uint256)",
-  "function cancelOffer(uint256)", "function takeOffer(uint256)", "function settle(uint256)", "function refundIfOracleFailed(uint256)",
-];
-const ERC20_ABI = ["function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)", "function balanceOf(address) view returns (uint256)"];
-const MARKETS = CFG.markets || [{ label: CFG.market, coin: "BTC", name: "BTC", sdApr: 3.9 }];
-let mkt = MARKETS.find((m) => m.label === CFG.defaultMarket) || MARKETS[0], liveMarkets = [];
-const mkey = (m) => ethers.encodeBytes32String(m.label);
-const marketOf = (b32) => { try { const l = ethers.decodeBytes32String(b32); return MARKETS.find((m) => m.label === l) || { label: l, name: l, unknown: true }; } catch { return { label: b32.slice(0, 10) + "…", name: b32.slice(0, 10) + "…", unknown: true }; } };
-// The public RPC rate-limits bursts, so never batch: one request at a time, and Multicall3 for lists.
-const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true, batchMaxCount: 1 });
-const MULTICALL = new ethers.Contract("0xcA11bde05977b3631167028862bE2a173976CA11",
-  ["function aggregate3(tuple(address target,bool allowFailure,bytes callData)[] calls) view returns (tuple(bool success,bytes returnData)[])"], read);
-async function multicall(contract, fn, argsList) {
-  const iface = contract.interface, target = await contract.getAddress();
-  const res = await MULTICALL.aggregate3(argsList.map((a) => ({ target, allowFailure: false, callData: iface.encodeFunctionData(fn, a) })));
-  return res.map((r) => iface.decodeFunctionResult(fn, r.returnData)[0]);
-}
-const oracleR = new ethers.Contract(CFG.oracle, ORACLE_ABI, read);
-const swapR = new ethers.Contract(CFG.swap, SWAP_ABI, read);
-let signer = null, me = null, daily = [];
-
-const $ = (id) => document.getElementById(id);
-const log = (m) => { $("log").textContent = `${new Date().toISOString().slice(11,19)}  ${m}\n` + $("log").textContent; };
-const usdc = (v) => Number(ethers.formatUnits(v, 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
-const pct = (r, d = 4) => (r * 100).toFixed(d) + "%";
-const aprOf = (perDay) => (perDay * 365 * 100).toFixed(1) + "%";
-const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
-const dayStr = (d) => new Date(Number(d) * 86400000).toISOString().slice(0, 10);
-const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-
-// ---------------------------------------------------------------- market data
-const dailyCache = {};
-async function loadMarket() {
-  const m = mkt;
-  daily = [];
-  if (dailyCache[m.label]) { daily = dailyCache[m.label]; return showMarket(); }
-  const [first, last, started] = await oracleR.range(mkey(m));
-  if (!started) { $("chartNote").textContent = "No funding values posted yet."; return; }
-  const days = []; for (let d = Number(first); d <= Number(last); d++) days.push(d);
-  const idx = await multicall(oracleR, "indexAt", days.map((d) => [mkey(m), d]));
-  const series = [];
-  for (let i = 1; i < idx.length; i++) series.push({ day: days[i] - 1, rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
-  dailyCache[m.label] = series;
-  if (m !== mkt) return; // the user switched market while this was loading
-  daily = series; showMarket();
-}
-function showMarket() {
-  const lastD = daily[daily.length - 1];
-  const last7 = daily.slice(-7); const avg7 = last7.reduce((s, x) => s + x.rate, 0) / last7.length;
-  $("kLast").textContent = pct(lastD.rate, 4); $("kLastNote").textContent = `per day on ${dayStr(lastD.day)} · ${aprOf(lastD.rate)} annualised`;
-  $("k7").textContent = aprOf(avg7); $("k7Note").textContent = `annualised · ${pct(avg7, 4)} per day`;
-  $("kDays").textContent = String(daily.length);
-  const avg = daily.reduce((s, x) => s + x.rate, 0) / daily.length;
-  $("chartNote").textContent = `${daily.length} days since ${dayStr(daily[0].day)} · average ${pct(avg)} per day (${aprOf(avg)} annualised)`;
-  $("tbl").textContent = "";
-  for (const x of [...daily].reverse()) { const tr = $("tbl").insertRow(); [dayStr(x.day), pct(x.rate), aprOf(x.rate)].forEach((t) => (tr.insertCell().textContent = t)); }
-  drawChart(); renderRateChips(); updateSummary();
-}
-
-let hourly = [], tRange = "d";
-const dailySeries = () => daily.map((x) => ({ label: dayStr(x.day) + " (UTC day)", short: dayStr(x.day).slice(5), rate: x.rate }));
-function drawChart() {
-  drawHistory("chart", "tip", 260, dailySeries(), false);
-  const ts = (tRange === "h48" || !daily.length) && hourly.length ? hourly : dailySeries();
-  drawHistory("tchart", "ttip", 220, ts, true);
-}
-// series: [{label, short, rate}] with rate expressed per day; ticket mode speaks APR and colours by win/lose
-function drawHistory(svgId, tipId, H, series, ticket) {
-  const svg = $(svgId); if (!svg || !series.length) return;
-  const W = svg.clientWidth || 900, narrow = W < 520, L = narrow ? 38 : 56, R = narrow ? 78 : 118, T = 22, B = 28;
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const fmt = (r, d) => ticket ? (r * 365 * 100).toFixed(1) + "%" : (r * 100).toFixed(d) + "%";
-  const fixed = currentFixed();
-  const vals = series.map((x) => x.rate).concat([0, fixed ?? 0]);
-  let max = Math.max(...vals), min = Math.min(...vals); const pad = (max - min || 1e-4) * 0.12; max += pad; min = Math.min(0, min - pad);
-  const y = (r) => T + (max - r) / (max - min) * (H - T - B);
-  const slot = (W - L - R) / series.length, bw = Math.min(24, Math.max(1.5, slot - (series.length > 40 ? 1 : 2)));
-  const parts = [];
-  const grid = cssVar("--grid"), mute = cssVar("--mute");
-  const k = ticket ? 365 * 100 : 100;
-  const rawStep = (max - min) * k / 4, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const tickStep = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= rawStep) / k;
-  for (let v = Math.ceil(min / tickStep) * tickStep; v <= max + 1e-15; v += tickStep) {
-    const yy = y(v), lbl = (v * k).toFixed(Math.max(0, -Math.floor(Math.log10(tickStep * k))));
-    parts.push(`<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`);
-    parts.push(`<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="${mute}">${Math.abs(v) < tickStep / 2 ? "0" : lbl}%</text>`);
-  }
-  if (fixed !== null && ticket) {
-    const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
-    parts.push(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="var(--acc)" opacity=".08" pointer-events="none"/>`);
-  }
-  parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="${mute}" stroke-width="1"/>`);
-  series.forEach((x, i) => {
-    const cx = L + i * slot + (slot - bw) / 2, y0 = y(0), y1 = y(x.rate), h = Math.abs(y1 - y0), top = Math.min(y0, y1);
-    const color = ticket && fixed !== null
-      ? ((x.rate > fixed) === (side === "1") ? "var(--pos)" : "var(--neg)")
-      : (x.rate >= 0 ? "var(--pos)" : "var(--neg)");
-    const rr = Math.min(4, h, bw / 2);
-    const d = x.rate >= 0
-      ? `M${cx},${y0} V${top + rr} Q${cx},${top} ${cx + rr},${top} H${cx + bw - rr} Q${cx + bw},${top} ${cx + bw},${top + rr} V${y0} Z`
-      : `M${cx},${y0} V${top + h - rr} Q${cx},${top + h} ${cx + rr},${top + h} H${cx + bw - rr} Q${cx + bw},${top + h} ${cx + bw},${top + h - rr} V${y0} Z`;
-    parts.push(`<path d="${d}" fill="${color}"/>`);
-    parts.push(`<rect x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" fill="transparent" data-i="${i}"/>`);
-  });
-  const avg = series.reduce((a, x) => a + x.rate, 0) / series.length;
-  parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
-  if (fixed !== null) parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="${ticket ? 3 : 2}" stroke-linecap="round" pointer-events="none"/>`);
-  if (ticket && fixed !== null) {
-    const wins = series.filter((x) => (x.rate > fixed) === (side === "1")).length;
-    const unit = tRange === "h48" && hourly.length ? "hours" : "days";
-    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "Above" : "Below"} ${(fixed * 365 * 100).toFixed(1)}%: you would have won ${wins} of the last ${series.length} ${unit}</text>`);
-  }
-  let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
-  if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
-  parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">${narrow ? "" : "avg "}${fmt(avg, 3)}</text>`);
-  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="12" font-weight="700" fill="var(--acc)">${narrow ? "" : ticket ? "your line " : "fixed "}${fmt(fixed, 3)}</text>`);
-  const every = Math.max(1, Math.ceil(series.length / (narrow ? 3 : 6)));
-  series.forEach((x, i) => { if (i % every === 0 || i === series.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${x.short}</text>`); });
-  svg.innerHTML = parts.join("");
-  svg.querySelectorAll("rect[data-i]").forEach((el) => {
-    el.addEventListener("mousemove", (ev) => {
-      const x = series[Number(el.dataset.i)], tip = $(tipId), box = svg.parentElement.getBoundingClientRect();
-      tip.textContent = `${x.label} · ${aprOf(x.rate)} APR (${pct(x.rate)} / day)`;
-      tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
-    });
-    el.addEventListener("mouseleave", () => ($(tipId).style.opacity = 0));
-  });
-}
-// live hourly funding straight from Hyperliquid's public API (read-only)
-async function loadLive() {
-  const m = mkt;
-  const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "fundingHistory", coin: m.coin, startTime: Date.now() - 48 * 3600e3 }) });
-  const rows = await r.json();
-  if (m !== mkt) return;
-  hourly = rows.map((x) => { const d = new Date(Math.round(x.time / 3600e3) * 3600e3); return { label: d.toISOString().slice(5, 13).replace("T", " ") + ":00 UTC", short: d.toISOString().slice(11, 13) + ":00", rate: Number(x.fundingRate) * 24 }; });
-  if (!hourly.length) return;
-  const now = hourly[hourly.length - 1].rate, h24 = hourly.slice(-24).reduce((a, x) => a + x.rate, 0) / Math.min(24, hourly.length);
-  $("liveNow").textContent = aprOf(now) + " APR"; $("live24").textContent = aprOf(h24);
-  renderRateChips(); drawChart();
-}
-// show only markets the oracle has kept up to date (last value at most 2 days old)
-async function discoverMarkets() {
-  const today = Math.floor(Date.now() / 86400000);
-  liveMarkets = [];
-  for (const m of MARKETS) {
-    const [, last, started] = await oracleR.range(mkey(m)).catch(() => [0n, 0n, false]);
-    if (started && today - Number(last) <= 2) liveMarkets.push(m);
-  }
-  if (!liveMarkets.includes(mkt) && liveMarkets.length) mkt = liveMarkets[0];
-  renderMarketChips();
-}
-function moveTag(m) { return m.sdApr >= 6 ? "moves a lot" : m.sdApr <= 4 ? "steady" : "moves some"; }
-function renderMarketChips() {
-  for (const id of ["mktChips", "mktChips2"]) {
-    const box = $(id); box.textContent = "";
-    box.style.display = liveMarkets.length < 2 ? "none" : "";
-    if (id === "mktChips") $("mktLabel").style.display = box.style.display;
-    for (const m of liveMarkets) {
-      const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", String(m === mkt));
-      b.innerHTML = `${m.name}<small>${moveTag(m)}</small>`;
-      b.onclick = () => selectMarket(m);
-      box.appendChild(b);
-    }
-  }
-  document.querySelectorAll(".mname").forEach((e) => (e.textContent = mkt.name));
-}
-function selectMarket(m) {
-  if (m === mkt) return;
-  mkt = m; hourly = []; aprEdited = false; marginEdited = false;
-  ["liveNow", "live24", "live7"].forEach((id) => ($(id).textContent = "–"));
-  renderMarketChips();
-  loadLive().catch((e) => log(`live funding unavailable: ${e.message}`));
-  loadMarket().catch((e) => ($("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`));
-}
-window.addEventListener("resize", drawChart);
-$("tblToggle").onclick = () => { const w = $("tblWrap"); w.hidden = !w.hidden; $("tblToggle").textContent = w.hidden ? "Show as table" : "Hide table"; };
-
-// ---------------------------------------------------------------- offers
-async function loadSwaps() {
-  const n = Number(await swapR.swapCount());
-  const body = $("swaps"); body.textContent = "";
-  if (n === 0) {
-    const td = body.insertRow().insertCell(); td.colSpan = 9; td.className = "empty";
-    td.innerHTML = "No offers yet. <a href=\"#create\">Post the first one</a>."; return;
-  }
-  const nowDay = Math.floor(Date.now() / 86400000);
-  const ids = []; for (let id = n - 1; id >= 0; id--) ids.push(id);
-  const all = await multicall(swapR, "getSwap", ids.map((id) => [id]));
-  for (const [k, id] of ids.entries()) {
-    const s = all[k], st = Number(s.state);
-    const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
-    const tr = body.insertRow();
-    const sm = marketOf(s.market), smOk = !sm.unknown && liveMarkets.some((m) => m.label === sm.label);
-    tr.insertCell().textContent = String(id);
-    tr.insertCell().textContent = sm.name + (smOk ? "" : " ⚠");
-    tr.insertCell().textContent = short(s.maker);
-    tr.insertCell().textContent = `${s.makerPaysFixed ? "Pays" : "Receives"} fixed ${pct(rate, 3)}/day (${aprOf(rate)})`;
-    tr.insertCell().textContent = usdc(s.notional) + " USDC";
-    tr.insertCell().textContent = usdc(s.margin) + " USDC";
-    tr.insertCell().textContent = s.startDay > 0n ? `${dayStr(s.startDay)} → ${dayStr(s.startDay + s.tenorDays)}` : `${s.tenorDays} days`;
-    const pill = document.createElement("span"); pill.className = "pill" + (st === 1 ? " open" : "");
-    pill.textContent = st === 1 ? (Date.now() / 1000 < Number(s.offerExpiry) ? "Open" : "Expired") : st === 2 ? "Active" : "Closed";
-    tr.insertCell().appendChild(pill);
-    const act = tr.insertCell();
-    const btn = (label, fn, ghost) => { const b = document.createElement("button"); b.textContent = label; if (ghost) b.className = "ghost"; b.disabled = !signer; b.onclick = fn; act.appendChild(b); };
-    if (st === 1 && me && me.toLowerCase() === s.maker.toLowerCase()) btn("Cancel", () => tx("cancel", (c) => c.cancelOffer(id)), true);
-    else if (st === 1 && smOk && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take: ${s.makerPaysFixed ? "receive" : "pay"} fixed`, () => take(id, s));
-    if (st === 2 && nowDay >= Number(s.startDay + s.tenorDays)) {
-      btn("Settle", () => tx("settle", (c) => c.settle(id)));
-      if (nowDay >= Number(s.startDay + s.tenorDays) + 7) btn("Refund", () => tx("refund", (c) => c.refundIfOracleFailed(id)), true);
-    }
-  }
-}
-
-async function ensureAllowance(amount) {
-  const token = new ethers.Contract(CFG.usdc, ERC20_ABI, signer);
-  if ((await token.allowance(me, CFG.swap)) >= amount) return;
-  log(`approving ${usdc(amount)} USDC…`);
-  await (await token.approve(CFG.swap, amount)).wait();
-}
-async function tx(label, call) {
-  try {
-    const c = new ethers.Contract(CFG.swap, SWAP_ABI, signer);
-    log(`${label}: waiting for wallet…`);
-    const r = await (await call(c)).wait();
-    log(`${label}: confirmed ${r.hash}`);
-    await loadSwaps();
-  } catch (e) { log(`${label} failed: ${e.shortMessage || e.message}`); }
-}
-async function take(id, s) {
-  const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
-  const youPay = s.makerPaysFixed; // the taker is on the other side
-  const nm = marketOf(s.market).name;
-  const msg = `Take offer #${id} (${nm})?\n\nYou will ${youPay ? "PAY the actual ${nm} funding and RECEIVE" : "PAY"} a fixed ${aprOf(rate)} APR${youPay ? "" : ` and RECEIVE the actual ${nm} funding`} on ${usdc(s.notional)} USDC for ${s.tenorDays} day(s), starting at the next UTC midnight.\n\nDeposit: ${usdc(s.margin)} USDC. This is the most you can lose.\nYour wallet will ask to approve the deposit (if needed) and then to take the offer.`;
-  if (!window.confirm(msg)) return;
-  try { await ensureAllowance(s.margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; }
-  await tx(`take #${id}`, (c) => c.takeOffer(id));
-  await readBalances(); refreshAction();
-}
-
-// ---------------------------------------------------------------- create form
-let side = "0", goal = "lock", tier = "fair", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
-const aprToDay = (apr) => apr / 100 / 365;
-function currentFixed() { const v = Number($("fApr").value); return Number.isFinite(v) ? aprToDay(v) : null; }
-function readForm() {
-  return {
-    paysFixed: side === "1",
-    rate: ethers.parseUnits(aprToDay(Number($("fApr").value)).toFixed(18), 18),
-    notional: ethers.parseUnits($("fNotional").value || "0", 6),
-    margin: ethers.parseUnits($("fMargin").value || "0", 6),
-    tenor: BigInt(parseInt($("fTenor").value || "0", 10)),
-    expiry: BigInt(Math.floor(Date.now() / 1000) + 3600 * parseInt($("fExpiry").value || "0", 10)),
-  };
-}
-function suggestedMargin() {
-  // enough to cover funding missing the fixed rate by one typical daily swing (sdApr) over the term
-  const n = Number($("fNotional").value), t = parseInt($("fTenor").value, 10);
-  if (!(n > 0 && t > 0)) return null;
-  return Math.min(100, Math.max(1, Math.ceil(n * mkt.sdApr / 36500 * t)));
-}
-function avg7() { return daily.length ? daily.slice(-7).reduce((a, x) => a + x.rate, 0) / Math.min(7, daily.length) : null; }
-function renderRateChips() {
-  const box = $("rateChips"); box.textContent = "";
-  const a = avg7(); if (a !== null) $("live7").textContent = aprOf(a);
-  const opts = [];
-  if (hourly.length) opts.push(["Right now", hourly[hourly.length - 1].rate * 365 * 100]);
-  if (hourly.length) opts.push(["Last 24h", hourly.slice(-24).reduce((s2, x) => s2 + x.rate, 0) / Math.min(24, hourly.length) * 365 * 100]);
-  if (a !== null) opts.push(["Last 7 days", a * 365 * 100]);
-  for (const [label, v] of opts) {
-    const b = document.createElement("button"); b.className = "chip"; b.textContent = `${label} ${v.toFixed(1)}%`;
-    b.onclick = () => setApr(Math.round(v * 2) / 2);
-    box.appendChild(b);
-  }
-  for (const d of [-2, 2]) { const b = document.createElement("button"); b.className = "chip"; b.textContent = `${d > 0 ? "+" : "−"}2%`; b.onclick = () => setApr(Number($("fApr").value) + d); box.appendChild(b); }
-  applyTier();
-}
-const tierStep = () => Math.max(1, Math.round(mkt.sdApr) / 2); // % APR away from the fair rate: half a typical daily swing
-function fairApr() { const a = avg7(); const r = a ?? (hourly.length ? hourly[hourly.length - 1].rate : null); return r === null ? null : r * 365 * 100; }
-// "easy" concedes TIER_STEP to the taker: a fixed receiver asks less, a fixed payer offers more
-function tierApr(t) { const f = fairApr(); if (f === null) return null; const sgn = side === "1" ? 1 : -1; return Math.round((f + (t === "easy" ? sgn : t === "better" ? -sgn : 0) * tierStep()) * 2) / 2; }
-function applyTier() { if (aprEdited) return; const v = tierApr(tier); if (v !== null) setApr(v, true); }
-function setApr(v, auto) { v = Math.max(-10, Math.min(40, v)); $("fApr").value = v.toFixed(1); if (!auto) aprEdited = true; updateSummary(); }
-function syncChips() {
-  document.querySelectorAll(".chips[data-for]").forEach((box) => {
-    const v = $(box.dataset.for).value;
-    box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === v)));
-  });
-  document.querySelectorAll(".choice[data-goal]").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.goal === goal)));
-  document.querySelectorAll(".choice[data-tier]").forEach((c) => c.setAttribute("aria-pressed", String(!aprEdited && c.dataset.tier === tier)));
-  if (fairApr() !== null) {
-    const rec = side === "1" ? "pay" : "receive";
-    $("tEasy").textContent = `${rec} ${tierApr("easy").toFixed(1)}% · gives the other side a little extra, so it gets taken sooner`;
-    $("tFair").textContent = `${rec} ${tierApr("fair").toFixed(1)}% · the last 7 days' average`;
-    $("tBetter").textContent = `${rec} ${tierApr("better").toFixed(1)}% · better terms for you, may wait longer`;
-  }
-}
-function updateSummary() {
-  const sm = suggestedMargin();
-  if (!marginEdited && sm !== null) $("fMargin").value = String(sm);
-  { const r = Number($("fApr").value).toFixed(1);
-    $("rateQ").textContent = { lock: "Fixed rate you receive", cap: "Fixed rate you pay", up: "Win if funding averages above", down: "Win if funding averages below" }[goal];
-    $("goalLine").innerHTML = {
-      lock: `You get <b>${r}% APR</b> no matter what funding does. If funding ends up higher, you give up the extra.`,
-      cap: `You pay <b>${r}% APR</b> no matter what funding does. If funding ends up lower, you pay more than you would have.`,
-      up: `You win if ${mkt.name} funding averages <b>above ${r}% APR</b> over the term.`,
-      down: `You win if ${mkt.name} funding averages <b>below ${r}% APR</b> over the term.`,
-    }[goal]; }
-  $("aprRange").value = $("fApr").value; $("aprBig").textContent = `${Number($("fApr").value).toFixed(1)}% APR`;
-  $("marginRange").value = $("fMargin").value; $("marginBig").textContent = `${Number($("fMargin").value)} USDC`;
-  $("marginHint").textContent = sm !== null ? `Suggested ${sm} USDC for this size and term. Bigger deposit = your call can be wrong by more before it is capped. Max 100.` : "";
-  const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
-  const pays = side === "1";
-  syncChips();
-  if (!(f !== null && n > 0 && m > 0 && t > 0)) { $("sumText").textContent = ""; $("scen").textContent = ""; refreshAction(); return; }
-  $("fRateDay").textContent = `= ${pct(f, 4)} per day`;
-  $("sumText").innerHTML = pays
-    ? `You <b>pay ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>receive the actual ${mkt.name} funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages above your rate. Most you can lose: <b>${m} USDC</b>.`
-    : `You <b>receive ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>pay the actual ${mkt.name} funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages below your rate. Most you can lose: <b>${m} USDC</b>.`;
-  const ref = avg7() ?? f;
-  const rows = [[`If funding averages ${(f * 365 * 100 - 3.65).toFixed(1)}% APR (lower)`, f - 0.0001], ["If funding equals your fixed rate", f], [`If funding averages ${(f * 365 * 100 + 3.65).toFixed(1)}% APR (higher)`, f + 0.0001], [`If the last 7 days repeat (${aprOf(ref)} APR)`, ref]];
-  $("sumText").innerHTML += ` Every 1% APR that funding misses your rate moves <b>±${(n * 0.01 / 365 * t).toFixed(2)} USDC</b>; the deposit is used up at a miss of ${(m / (n * t) * 36500).toFixed(1)}% APR.`;
-  $("scen").innerHTML = "";
-  for (const [label, actual] of rows) {
-    let pnl = n * (actual - f) * t * (pays ? 1 : -1); pnl = Math.max(-m, Math.min(m, pnl));
-    const tr = $("scen").insertRow(); tr.insertCell().textContent = label;
-    tr.insertCell().textContent = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " USDC";
-  }
-  drawChart(); drawPayoff(); refreshAction();
-}
-function drawPayoff() {
-  const svg = $("payoff"); const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
-  if (!(f !== null && n > 0 && m > 0 && t > 0)) { svg.innerHTML = ""; return; }
-  const pays = side === "1";
-  const W = svg.clientWidth || 800, H = 220, L = 52, R = 16, T = 18, B = 34;
-  const fA = f * 365 * 100;                                   // fixed, % APR
-  const capA = m / (n * t) * 365 * 100;                      // APR distance at which the deposit is used up
-  const span = Math.max(capA * 1.5, 6);
-  const x0 = fA - span, x1 = fA + span;
-  const pnl = (a) => { let v = n * ((a - fA) / 100 / 365) * t * (pays ? 1 : -1); return Math.max(-m, Math.min(m, v)); };
-  const X = (a) => L + (a - x0) / (x1 - x0) * (W - L - R);
-  const Y = (v) => T + (m - v) / (2 * m) * (H - T - B);
-  const mute = cssVar("--mute"), grid = cssVar("--grid");
-  const parts = [];
-  // win / lose zones
-  const winLeft = !pays;
-  parts.push(`<rect x="${X(x0)}" y="${T}" width="${X(fA) - X(x0)}" height="${H - T - B}" fill="${winLeft ? "var(--pos)" : "var(--neg)"}" opacity=".07"/>`);
-  parts.push(`<rect x="${X(fA)}" y="${T}" width="${X(x1) - X(fA)}" height="${H - T - B}" fill="${winLeft ? "var(--neg)" : "var(--pos)"}" opacity=".07"/>`);
-  for (const v of [m, 0, -m]) {
-    parts.push(`<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v === 0 ? mute : grid}" stroke-width="1"/>`);
-    parts.push(`<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="${mute}">${v > 0 ? "+" : ""}${v.toFixed(v % 1 ? 2 : 0)}</text>`);
-  }
-  // payoff line: blue where you win, red where you lose
-  const pts = (a, b) => { const out = []; for (let i = 0; i <= 60; i++) { const a2 = a + (b - a) * i / 60; out.push(`${X(a2)},${Y(pnl(a2))}`); } return out.join(" "); };
-  const leftColor = winLeft ? "var(--pos)" : "var(--neg)", rightColor = winLeft ? "var(--neg)" : "var(--pos)";
-  parts.push(`<polyline points="${pts(x0, fA)}" fill="none" stroke="${leftColor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-  parts.push(`<polyline points="${pts(fA, x1)}" fill="none" stroke="${rightColor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
-  // fixed-rate marker
-  parts.push(`<line x1="${X(fA)}" x2="${X(fA)}" y1="${T}" y2="${H - B}" stroke="var(--acc)" stroke-width="2"/>`);
-  parts.push(`<text x="${X(fA)}" y="${T - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--acc)">your fixed ${fA.toFixed(1)}%</text>`);
-  // zone labels
-  parts.push(`<text x="${(X(x0) + X(fA)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${leftColor}">${winLeft ? "you win" : "you lose"}</text>`);
-  parts.push(`<text x="${(X(fA) + X(x1)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${rightColor}">${winLeft ? "you lose" : "you win"}</text>`);
-  // 7-day average marker
-  const a7 = avg7();
-  if (a7 !== null) {
-    const a7A = a7 * 365 * 100;
-    if (a7A > x0 && a7A < x1) {
-      parts.push(`<circle cx="${X(a7A)}" cy="${Y(pnl(a7A))}" r="5" fill="var(--ink)" stroke="var(--surface-2)" stroke-width="2"/>`);
-      parts.push(`<text x="${X(a7A) + 8}" y="${Y(pnl(a7A)) - 8}" font-size="11" fill="var(--ink-2)">last 7 days: ${a7A.toFixed(1)}%</text>`);
-    }
-  }
-  // x axis labels
-  for (const a of [x0, (x0 + fA) / 2, fA, (fA + x1) / 2, x1]) parts.push(`<text x="${X(a)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="${mute}">${a.toFixed(1)}%</text>`);
-  parts.push(`<text x="${W - R}" y="${H - 1}" text-anchor="end" font-size="11" fill="${mute}">average ${mkt.name} funding over the term (APR) →</text>`);
-  parts.push(`<text x="${L}" y="${T - 5}" font-size="11" fill="${mute}">profit / loss (USDC)</text>`);
-  parts.push(`<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="phit"/>`);
-  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = parts.join("");
-  $("phit").addEventListener("mousemove", (ev) => {
-    const box = svg.getBoundingClientRect(), a = x0 + (ev.clientX - box.left - L) / (W - L - R) * (x1 - x0), v = pnl(a), tip = $("ptip");
-    tip.textContent = `funding ${a.toFixed(1)}% APR → ${v >= 0 ? "+" : ""}${v.toFixed(2)} USDC`;
-    tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
-  });
-  $("phit").addEventListener("mouseleave", () => ($("ptip").style.opacity = 0));
-}
-window.addEventListener("resize", () => drawPayoff());
-document.querySelectorAll(".choice[data-goal]").forEach((c) => (c.onclick = () => { goal = c.dataset.goal; side = c.dataset.side; applyTier(); updateSummary(); }));
-document.querySelectorAll(".choice[data-tier]").forEach((c) => (c.onclick = () => { tier = c.dataset.tier; aprEdited = false; applyTier(); updateSummary(); }));
-document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
-$("aprRange").addEventListener("input", (e) => setApr(Number(e.target.value)));
-$("marginRange").addEventListener("input", (e) => { $("fMargin").value = e.target.value; marginEdited = true; updateSummary(); });
-document.querySelectorAll("#rangeTabs .chip").forEach((b) => (b.onclick = () => { tRange = b.dataset.range; document.querySelectorAll("#rangeTabs .chip").forEach((c) => c.setAttribute("aria-pressed", String(c === b))); drawChart(); }));
-$("fMargin").addEventListener("input", () => { marginEdited = true; updateSummary(); });
-["fNotional", "fTenor", "fExpiry"].forEach((id) => $(id).addEventListener("input", updateSummary));
-
-// ---------------------------------------------------------------- wallet & the one action button
-let onArc = false;
-function setCheck(id, state, text) { const el = $(id); el.className = state; if (text) el.textContent = text; }
-async function readBalances() {
-  if (!signer || !onArc) { usdcBal = allowance = null; return; }
-  const token = new ethers.Contract(CFG.usdc, ERC20_ABI, read);
-  [usdcBal, allowance] = await Promise.all([token.balanceOf(me), token.allowance(me, CFG.swap)]);
-}
-function refreshAction() {
-  const btn = $("actionBtn"), note = $("actionNote");
-  let need = null; try { need = readForm().margin; } catch { need = null; }
-  setCheck("cWallet", signer ? "ok" : "", signer ? `Wallet ${short(me)}` : "Wallet connected");
-  setCheck("cChain", signer ? (onArc ? "ok" : "bad") : "");
-  const enough = usdcBal !== null && need !== null && usdcBal >= need;
-  setCheck("cBal", usdcBal === null ? "" : enough ? "ok" : "bad", usdcBal === null ? "Enough USDC" : `${usdc(usdcBal)} USDC on Arc`);
-  const approved = allowance !== null && need !== null && allowance >= need;
-  setCheck("cAllow", allowance === null ? "" : approved ? "ok" : "", "Deposit approved");
-  btn.disabled = false;
-  if (!signer) { btn.textContent = "Connect wallet"; btn.onclick = connect; note.textContent = "MetaMask, Rabby or any EVM wallet."; return; }
-  if (!onArc) { btn.textContent = "Switch to Arc"; btn.onclick = connect; note.textContent = "Arc mainnet, chain 5042."; return; }
-  if (!enough) { btn.textContent = "Not enough USDC"; btn.disabled = true; note.innerHTML = `Bridge USDC to Arc with <a href="https://across.to" target="_blank" rel="noopener">Across</a>, then refresh.`; return; }
-  if (!approved) { btn.textContent = `Approve ${usdc(need)} USDC`; btn.onclick = approve; note.textContent = "Step 1 of 2: lets the contract take your deposit."; return; }
-  btn.textContent = "Post offer"; btn.onclick = post; note.textContent = "Step 2 of 2: you can cancel any time before it is taken.";
-}
-async function connect() {
-  if (!window.ethereum) { log("No browser wallet found. Install MetaMask or Rabby."); return; }
-  try {
-    await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x" + CFG.chainId.toString(16), chainName: "Arc", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: [CFG.rpc], blockExplorerUrls: [CFG.explorer] }] });
-    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + CFG.chainId.toString(16) }] }).catch(() => {});
-    const bp = new ethers.BrowserProvider(window.ethereum);
-    signer = await bp.getSigner(); me = await signer.getAddress();
-    onArc = Number((await bp.getNetwork()).chainId) === CFG.chainId;
-    $("connect").textContent = short(me);
-    log(`connected ${me}${onArc ? "" : " (not on Arc)"}`);
-    await readBalances(); refreshAction(); await loadSwaps();
-  } catch (e) { log(`connect failed: ${e.shortMessage || e.message}`); }
-}
-async function approve() {
-  const btn = $("actionBtn"); btn.disabled = true; btn.textContent = "Approving…";
-  try {
-    const token = new ethers.Contract(CFG.usdc, ERC20_ABI, signer);
-    const r = await (await token.approve(CFG.swap, readForm().margin)).wait();
-    log(`approved: ${r.hash}`);
-  } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); }
-  await readBalances(); refreshAction();
-}
-async function post() {
-  const btn = $("actionBtn"); btn.disabled = true; btn.textContent = "Posting…";
-  const f = readForm();
-  await tx("post offer", (c) => c.createOffer(mkey(mkt), f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
-  await readBalances(); refreshAction();
-  location.hash = "#offers";
-}
-$("connect").onclick = connect;
-if (window.ethereum) { window.ethereum.on?.("accountsChanged", () => connect()); window.ethereum.on?.("chainChanged", () => connect()); }
-
-// ---------------------------------------------------------------- boot
-for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
-  $("a" + id).textContent = short(addr); $("a" + id).href = `${CFG.explorer}/address/${addr}`;
-  $("s" + id).href = `https://repo.sourcify.dev/contracts/full_match/${CFG.chainId}/${addr}/`;
-}
-updateSummary();
-(async () => {
-  try { await discoverMarkets(); } catch (e) { log(`market list: ${e.shortMessage || e.message}`); renderMarketChips(); }
-  loadLive().catch((e) => log(`live funding unavailable: ${e.message}`));
-  try { await loadMarket(); } catch (e) { $("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`; }
-  try { await loadSwaps(); } catch (e) { log(e.shortMessage || e.message); }
-})();
-</script>
+<script type="module" src="app.js"></script>
 </body>
 </html>

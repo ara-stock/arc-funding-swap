@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hedge perp funding · Funding Swap</title>
+<meta name="description" content="Fix the funding your Hyperliquid perp earns or pays for 1 to 30 days. Settled in USDC on Arc.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body data-page="hedge">
+<nav>
+  <div class="wrap">
+    <a class="brand" href="index.html"><i></i>Funding Swap</a>
+    <div class="links"><a href="index.html">Home</a><a href="hedge.html" aria-current="page">Hedge</a><a href="predict.html">Predict</a><a href="how.html">How it works</a><a href="https://github.com/ara-stock/arc-funding-swap">GitHub</a></div>
+    <button id="connect" class="ghost">Connect wallet</button>
+  </div>
+</nav>
+
+<header class="wrap">
+  <section style="padding-bottom:0">
+    <div class="kicker">Hedge</div>
+    <h1>Make your perp's funding predictable</h1>
+    <p class="lead">Your Hyperliquid perp pays or earns funding every hour, and the rate keeps moving. Post an offer to swap that moving fee for one fixed rate for 1 to 30 days. Your perp stays where it is; you only deposit USDC on Arc.</p>
+    <p class="crosslink">Not hedging a position? <a href="predict.html">Go to Predict →</a></p>
+  </section>
+</header>
+
+<main class="wrap">
+  <section id="create">
+    <div class="kicker">Post an offer</div>
+    <h2>Fix your funding in three steps</h2>
+    <p class="sub">Choose what your perp does, check the rate, match the size. When someone takes the other side, the contract settles automatically. You can cancel any time before it is taken.</p>
+    <!-- ticket: keep in sync with predict.html/hedge.html -->
+    <div class="card">
+      <div class="q"><div class="qn">1</div><div>
+        <div class="qtitle">What do you want to do with your perp?</div>
+        <div class="goals">
+          <button class="choice" data-goal="lock" data-side="0" aria-pressed="true"><b>🔒 Lock in my funding income</b><span>Your perp is short and earns funding. Swap it for a fixed rate, so a drop in funding can't shrink your income.</span></button>
+          <button class="choice" data-goal="cap" data-side="1" aria-pressed="false"><b>🛡️ Cap my funding cost</b><span>Your perp is long and pays funding. Pay a fixed rate instead, so a spike can't raise your cost.</span></button>
+          <div class="goalgrp" id="mktLabel">Which market?</div>
+          <div class="chips big" id="mktChips" style="grid-column:1/-1;margin:0"></div>
+        </div>
+      </div></div>
+      <div class="q"><div class="qn">2</div><div>
+        <div class="qtitle">At what rate?</div>
+        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span><span class="mname">HYPE</span> funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
+        <div class="tiers" id="tiers">
+          <button class="choice" data-tier="easy" aria-pressed="false"><b>⚡ Fill fast</b><span id="tEasy">–</span></button>
+          <button class="choice" data-tier="fair" aria-pressed="true"><b>⚖️ Fair</b><span id="tFair">–</span></button>
+          <button class="choice" data-tier="better" aria-pressed="false"><b>🎯 Better for me</b><span id="tBetter">–</span></button>
+        </div>
+        <div class="slider">
+          <div class="sliderhead"><span id="rateQ">Your fixed rate</span><b id="aprBig">9.0% APR</b></div>
+          <div class="hint" id="goalLine" style="margin:0;font-size:14px;color:var(--ink)"></div>
+          <details id="customRate"><summary>Choose an exact rate</summary>
+            <div class="chips" id="rateChips"></div>
+            <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
+            <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
+          </details>
+          <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
+        </div>
+        <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="d" aria-pressed="true">Since Arc launch (daily)</button><button class="chip" data-range="h48" aria-pressed="false">Last 48 hours (hourly)</button></div>
+        <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="Funding against your rate; shaded zone is where you win"></svg><div class="tip" id="ttip"></div></div>
+        <div class="hint">Shaded = where you win. Blue bars: hours (or days) you would have won, red: lost.</div>
+      </div></div>
+      <div class="q"><div class="qn">3</div><div>
+        <div class="inrow">
+          <div><div class="qtitle">How big?</div>
+            <div class="chips big" data-for="fNotional"><button class="chip" data-v="1000">$1k</button><button class="chip" data-v="10000">$10k</button><button class="chip" data-v="50000">$50k</button><button class="chip" data-v="100000">$100k</button></div>
+            <div class="hint">Use your perp's size, so the swap matches the funding you earn or pay. You only lock the deposit below (max 100 USDC).</div></div>
+          <div><div class="qtitle">For how long?</div>
+            <div class="chips big" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
+            <div class="hint">Starts at the next UTC midnight.</div></div>
+        </div>
+        <div class="slider">
+          <div class="sliderhead"><span>Deposit: the most you can lose (and win)</span><b id="marginBig">3 USDC</b></div>
+          <input type="range" id="marginRange" min="1" max="100" step="1" value="3" aria-label="Deposit in USDC">
+          <div class="hint" id="marginHint"></div>
+        </div>
+        <details><summary>Custom amounts</summary>
+          <div class="inrow" style="margin-top:10px">
+            <div><label for="fNotional">Size</label><div class="unit"><input id="fNotional" value="10000" inputmode="decimal"><i>USDC</i></div></div>
+            <div><label for="fTenor">Term</label><div class="unit"><input id="fTenor" value="7" inputmode="numeric"><i>days</i></div></div>
+            <div><label for="fMargin">Deposit</label><div class="unit"><input id="fMargin" value="3" inputmode="decimal"><i>USDC</i></div></div>
+            <div><label for="fExpiry">Offer open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
+          </div>
+        </details>
+      </div></div>
+      <div class="summary">
+        <p id="sumText"></p>
+        <div class="chart-wrap"><svg class="payoff" id="payoff" role="img" aria-label="Profit or loss versus average funding over the term"></svg><div class="tip" id="ptip"></div></div>
+        <table class="scen" id="scen"></table>
+      </div>
+      <div class="checks"><span id="cWallet">Wallet connected</span><span id="cChain">On Arc mainnet</span><span id="cBal">Enough USDC</span><span id="cAllow">Deposit approved</span></div>
+      <div class="plan" id="plan" aria-live="polite"><h4>What will happen</h4><p>…</p></div>
+      <div class="action"><button id="actionBtn">Connect wallet</button><span class="sub" style="margin:0;font-size:14px" id="actionNote">Two quick signatures: approve the deposit, then post.</span></div>
+    </div>
+    <!-- /ticket -->
+  </section>
+
+  <section id="offers">
+    <div class="kicker">Offers</div>
+    <h2>Open and active swaps</h2>
+    <p class="sub">Take an open offer to become the counterparty. You need the same deposit in USDC on Arc. After the term ends anyone can settle; if the oracle never posts the final day, both sides can take a full refund 7 days later.</p>
+    <div class="card scroll">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Market</th><th>Maker</th><th>Maker position</th><th>Size</th><th>Deposit each</th><th>Term</th><th>Status</th><th></th></tr></thead>
+        <tbody id="swaps"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <div class="card"><h3 style="margin-bottom:6px">Activity</h3><pre id="log">Read-only until a wallet is connected.</pre></div>
+  </section>
+</main>
+
+<footer class="wrap">Funding Swap on Arc · MIT · Not affiliated with Hyperliquid or Circle · <a href="https://github.com/ara-stock/arc-funding-swap">Source</a> · <a href="how.html">How it works</a></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
+<script src="config.js"></script>
+<script type="module" src="app.js"></script>
+</body>
+</html>
