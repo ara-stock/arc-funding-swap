@@ -202,7 +202,7 @@
           <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Funding goes above my rate</b><span>Pay a fixed rate, receive the actual funding. Wins if funding heats up.</span></button>
         </div>
         <div class="chart-wrap" style="margin-top:12px"><svg class="chart" id="tchart" style="height:200px" role="img" aria-label="Daily BTC funding with your fixed rate and win zone"></svg><div class="tip" id="ttip"></div></div>
-        <div class="hint">Daily BTC funding since Arc launch, annualised. The line is your fixed rate; the shaded side is where you win.</div>
+        <div class="hint">Daily BTC funding since Arc launch, annualised. <b style="color:var(--pos)">Blue</b> days were on your winning side of the line, <b style="color:var(--neg)">red</b> days on the losing side. What counts is the average over your term.</div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
         <div class="qtitle">Fixed rate</div>
@@ -343,10 +343,11 @@ function drawHistory(svgId, tipId, H) {
   const parts = [];
   const grid = cssVar("--grid"), mute = cssVar("--mute");
   // "nice" ticks: steps of 1, 2 or 5 × 10^k (in %/day)
-  const rawStep = (max - min) / 4, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
-  const tickStep = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= rawStep);
+  const k = apr ? 365 * 100 : 100;                     // label unit: % APR or % per day
+  const rawStep = (max - min) * k / 4, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const tickStep = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= rawStep) / k;
   for (let v = Math.ceil(min / tickStep) * tickStep; v <= max + 1e-15; v += tickStep) {
-    const yy = y(v), lbl = apr ? (v * 365 * 100).toFixed(0) : (v * 100).toFixed(Math.max(0, -Math.floor(Math.log10(tickStep * 100)) + 0));
+    const yy = y(v), lbl = (v * k).toFixed(Math.max(0, -Math.floor(Math.log10(tickStep * k))));
     parts.push(`<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`);
     parts.push(`<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="${mute}">${Math.abs(v) < tickStep / 2 ? "0" : lbl}%</text>`);
   }
@@ -354,7 +355,9 @@ function drawHistory(svgId, tipId, H) {
   const r = 4;
   daily.forEach((x, i) => {
     const cx = L + i * slot + (slot - bw) / 2, y0 = y(0), y1 = y(x.rate), h = Math.abs(y1 - y0), top = Math.min(y0, y1);
-    const color = x.rate >= 0 ? "var(--pos)" : "var(--neg)";
+    const color = apr && fixed !== null
+      ? ((x.rate > fixed) === (side === "1") ? "var(--pos)" : "var(--neg)")   // blue = this day was on your winning side
+      : (x.rate >= 0 ? "var(--pos)" : "var(--neg)");
     const rr = Math.min(r, h, bw / 2);
     // rounded data-end, square at the baseline
     const d = x.rate >= 0
@@ -368,7 +371,10 @@ function drawHistory(svgId, tipId, H) {
   if (fixed !== null) {
     const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
     parts.unshift(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="var(--acc)" opacity=".08" pointer-events="none"/>`);
-    parts.push(`<text x="${L + 8}" y="${side === "1" ? T + 14 : H - B - 8}" font-size="11" font-weight="700" fill="var(--acc)">${side === "1" ? "▲ HIGH wins above the line" : "▼ LOW wins below the line"}</text>`);
+    if (apr) {
+      const wins = daily.filter((x) => (x.rate > fixed) === (side === "1")).length;
+      parts.push(`<text x="${L + 6}" y="${T + 12}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins} of ${daily.length} past days on your side</text>`);
+    }
     parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
   }
   // direct labels at the right end; nudge apart when the two lines are close
