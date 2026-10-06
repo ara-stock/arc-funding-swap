@@ -131,6 +131,9 @@
   .hl .choice em { font-size:15px; padding:4px 12px; }
   @media (max-width:560px) { .hl { grid-template-columns:1fr; } }
   @media (max-width:560px) { .q { grid-template-columns:1fr; } .q .qn { margin-bottom:4px; } }
+  .goals { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .goalgrp { grid-column:1/-1; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); margin-top:4px; }
+  @media (max-width:560px) { .goals { grid-template-columns:1fr; } }
   .chips.big .chip { padding:9px 16px; font-size:14px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
@@ -211,27 +214,33 @@
   <section id="create">
     <div class="kicker">Create</div>
     <h2>Make your call in three steps</h2>
-    <p class="sub">Look at where BTC funding is, drag your line, pick HIGH or LOW. Someone takes the other side, and the contract settles automatically. You can cancel any time before it is taken.</p>
+    <p class="sub">Pick what you want to do, check the rate, choose a size. Someone takes the other side, and the contract settles automatically. You can cancel any time before it is taken.</p>
     <div class="card">
       <div class="q"><div class="qn">1</div><div>
-        <div class="qtitle">Look at the rate, then set your line</div>
-        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span>BTC funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
-        <div class="chips" id="rangeTabs"><button class="chip" data-range="h48" aria-pressed="true">Last 48 hours (hourly)</button><button class="chip" data-range="d" aria-pressed="false">Since Arc launch (daily)</button></div>
-        <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="BTC funding with your line"></svg><div class="tip" id="ttip"></div></div>
-        <div class="slider">
-          <div class="sliderhead"><span>Your line (fixed rate)</span><b id="aprBig">9.0% APR</b></div>
-          <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
-          <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
-          <div class="chips" id="rateChips"></div>
-          <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
+        <div class="qtitle">What do you want to do?</div>
+        <div class="goals">
+          <div class="goalgrp">Protect a perp position</div>
+          <button class="choice" data-goal="lock" data-side="0" aria-pressed="true"><b>🔒 Lock in my funding income</b><span>You are short the perp and earn funding. Swap it for a fixed rate, so a drop in funding can't hurt you.</span></button>
+          <button class="choice" data-goal="cap" data-side="1" aria-pressed="false"><b>🛡️ Cap my funding cost</b><span>You are long the perp and pay funding. Pay a fixed rate instead, so a spike can't hurt you.</span></button>
+          <div class="goalgrp">Take a view</div>
+          <button class="choice" data-goal="up" data-side="1" aria-pressed="false"><b>📈 Funding will go up</b><span>You win if BTC funding averages above the rate in step 2.</span></button>
+          <button class="choice" data-goal="down" data-side="0" aria-pressed="false"><b>📉 Funding will go down</b><span>You win if BTC funding averages below the rate in step 2.</span></button>
         </div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
-        <div class="qtitle">Will funding average above or below your line?</div>
-        <div class="hl">
-          <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Above my line</b><span>You pay the fixed rate and receive the actual funding.</span></button>
-          <button class="choice low" data-side="0" aria-pressed="true"><em>▼ LOW</em><b>Below my line</b><span>You receive the fixed rate. Locks in an income for basis traders.</span></button>
+        <div class="qtitle">At what rate?</div>
+        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span>BTC funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
+        <div class="slider">
+          <div class="sliderhead"><span id="rateQ">Your fixed rate</span><b id="aprBig">9.0% APR</b></div>
+          <div class="hint" id="goalLine" style="margin:0 0 8px;font-size:14px;color:var(--ink)"></div>
+          <div class="chips" id="rateChips"></div>
+          <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
+          <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
+          <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
         </div>
+        <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="h48" aria-pressed="true">Last 48 hours (hourly)</button><button class="chip" data-range="d" aria-pressed="false">Since Arc launch (daily)</button></div>
+        <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="BTC funding against your rate; shaded zone is where you win"></svg><div class="tip" id="ttip"></div></div>
+        <div class="hint">Shaded = where you win. Blue bars: hours (or days) you would have won, red: lost.</div>
       </div></div>
       <div class="q"><div class="qn">3</div><div>
         <div class="inrow">
@@ -405,7 +414,7 @@ function drawHistory(svgId, tipId, H, series, ticket) {
   if (ticket && fixed !== null) {
     const wins = series.filter((x) => (x.rate > fixed) === (side === "1")).length;
     const unit = tRange === "h48" && hourly.length ? "hours" : "days";
-    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins}/${series.length} ${unit}${narrow ? "" : " were"} on your side</text>`);
+    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "Above" : "Below"} ${(fixed * 365 * 100).toFixed(1)}%: you would have won ${wins} of the last ${series.length} ${unit}</text>`);
   }
   let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
   if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
@@ -497,7 +506,7 @@ async function take(id, s) {
 }
 
 // ---------------------------------------------------------------- create form
-let side = "0", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
+let side = "0", goal = "lock", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
 const aprToDay = (apr) => apr / 100 / 365;
 function currentFixed() { const v = Number($("fApr").value); return Number.isFinite(v) ? aprToDay(v) : null; }
 function readForm() {
@@ -530,7 +539,8 @@ function renderRateChips() {
     box.appendChild(b);
   }
   for (const d of [-2, 2]) { const b = document.createElement("button"); b.className = "chip"; b.textContent = `${d > 0 ? "+" : "−"}2%`; b.onclick = () => setApr(Number($("fApr").value) + d); box.appendChild(b); }
-  if (!aprEdited && a !== null) setApr(Math.round(a * 365 * 100 * 2) / 2, true);
+  const ref = hourly.length ? hourly[hourly.length - 1].rate : a;
+  if (!aprEdited && ref !== null) setApr(Math.round(ref * 365 * 100 * 2) / 2, true);
 }
 function setApr(v, auto) { v = Math.max(-10, Math.min(40, v)); $("fApr").value = v.toFixed(1); if (!auto) aprEdited = true; updateSummary(); }
 function syncChips() {
@@ -538,11 +548,19 @@ function syncChips() {
     const v = $(box.dataset.for).value;
     box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === v)));
   });
-  document.querySelectorAll(".choice").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.side === side)));
+  document.querySelectorAll(".choice").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.goal === goal)));
 }
 function updateSummary() {
   const sm = suggestedMargin();
   if (!marginEdited && sm !== null) $("fMargin").value = String(sm);
+  { const r = Number($("fApr").value).toFixed(1);
+    $("rateQ").textContent = { lock: "Fixed rate you receive", cap: "Fixed rate you pay", up: "Win if funding averages above", down: "Win if funding averages below" }[goal];
+    $("goalLine").innerHTML = {
+      lock: `You get <b>${r}% APR</b> no matter what funding does. If funding ends up higher, you give up the extra.`,
+      cap: `You pay <b>${r}% APR</b> no matter what funding does. If funding ends up lower, you pay more than you would have.`,
+      up: `You win if BTC funding averages <b>above ${r}% APR</b> over the term.`,
+      down: `You win if BTC funding averages <b>below ${r}% APR</b> over the term.`,
+    }[goal]; }
   $("aprRange").value = $("fApr").value; $("aprBig").textContent = `${Number($("fApr").value).toFixed(1)}% APR`;
   $("marginRange").value = $("fMargin").value; $("marginBig").textContent = `${Number($("fMargin").value)} USDC`;
   $("marginHint").textContent = sm !== null ? `Suggested ${sm} USDC for this size and term. Bigger deposit = your call can be wrong by more before it is capped. Max 100.` : "";
@@ -595,8 +613,8 @@ function drawPayoff() {
   parts.push(`<line x1="${X(fA)}" x2="${X(fA)}" y1="${T}" y2="${H - B}" stroke="var(--acc)" stroke-width="2"/>`);
   parts.push(`<text x="${X(fA)}" y="${T - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--acc)">your fixed ${fA.toFixed(1)}%</text>`);
   // zone labels
-  parts.push(`<text x="${(X(x0) + X(fA)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${leftColor}">${winLeft ? "▼ LOW: you win" : "you lose"}</text>`);
-  parts.push(`<text x="${(X(fA) + X(x1)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${rightColor}">${winLeft ? "you lose" : "▲ HIGH: you win"}</text>`);
+  parts.push(`<text x="${(X(x0) + X(fA)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${leftColor}">${winLeft ? "you win" : "you lose"}</text>`);
+  parts.push(`<text x="${(X(fA) + X(x1)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${rightColor}">${winLeft ? "you lose" : "you win"}</text>`);
   // 7-day average marker
   const a7 = avg7();
   if (a7 !== null) {
@@ -620,7 +638,7 @@ function drawPayoff() {
   $("phit").addEventListener("mouseleave", () => ($("ptip").style.opacity = 0));
 }
 window.addEventListener("resize", () => drawPayoff());
-document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { side = c.dataset.side; updateSummary(); }));
+document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { goal = c.dataset.goal; side = c.dataset.side; updateSummary(); }));
 document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
 $("aprRange").addEventListener("input", (e) => setApr(Number(e.target.value)));
 $("marginRange").addEventListener("input", (e) => { $("fMargin").value = e.target.value; marginEdited = true; updateSummary(); });
