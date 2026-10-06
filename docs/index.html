@@ -109,6 +109,12 @@
   .checks span.bad::before { content:"!"; color:var(--neg); font-weight:700; }
   .action { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
   .action button { padding:12px 22px; font-size:15px; }
+
+  .choice em { font-style:normal; font-weight:800; font-size:13px; letter-spacing:.08em; display:inline-block; padding:2px 8px; border-radius:6px; margin-bottom:8px; color:#fff; }
+  .choice.low em { background:var(--neg); } .choice.high em { background:var(--pos); }
+  .choice.low[aria-pressed="true"] { border-color:var(--neg); background:color-mix(in srgb, var(--neg) 8%, var(--surface)); box-shadow:0 0 0 1px var(--neg) inset; }
+  .choice.high[aria-pressed="true"] { border-color:var(--pos); background:color-mix(in srgb, var(--pos) 8%, var(--surface)); box-shadow:0 0 0 1px var(--pos) inset; }
+  svg.payoff { width:100%; height:220px; display:block; margin:6px 0 4px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
 </style>
@@ -167,7 +173,7 @@
     <p class="sub">Each bar is one UTC day of funding, computed from the on‑chain index. Bars above zero mean longs paid shorts. Hover a bar for the exact value.</p>
     <div class="card">
       <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily BTC funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
-      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span></div>
+      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span><span style="--c:color-mix(in srgb, var(--pos) 25%, transparent)">Your win zone (from the order form)</span></div>
       <div class="row" style="justify-content:space-between;margin-top:10px"><span class="sub" style="margin:0;font-size:13px" id="chartNote">Loading on‑chain data…</span><button class="toggle" id="tblToggle">Show as table</button></div>
       <div class="scroll" id="tblWrap" hidden><table class="tbl"><thead><tr><th>Day (UTC)</th><th>Funding / day</th><th>Annualised</th></tr></thead><tbody id="tbl"></tbody></table></div>
     </div>
@@ -191,11 +197,13 @@
     <p class="sub">You set the terms; someone else takes the other side. Your deposit stays in the contract until settlement, and you can cancel any time before the offer is taken.</p>
     <div class="card">
       <div class="q"><div class="qn">1</div><div>
-        <div class="qtitle">What do you want?</div>
+        <div class="qtitle">High or low? Over the term, will BTC funding average above or below your fixed rate?</div>
         <div class="choices">
-          <button class="choice" data-side="0" aria-pressed="true"><b>Lock in a funding income</b><span>Receive a fixed rate and pay the actual funding. For basis traders, or if you expect funding to fall.</span></button>
-          <button class="choice" data-side="1" aria-pressed="false"><b>Bet that funding rises</b><span>Pay a fixed rate and receive the actual funding. You win if funding averages above your rate.</span></button>
+          <button class="choice low" data-side="0" aria-pressed="true"><em>▼ LOW</em><b>Funding stays below my rate</b><span>Receive a fixed rate, pay the actual funding. Locks in an income for basis traders.</span></button>
+          <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Funding goes above my rate</b><span>Pay a fixed rate, receive the actual funding. Wins if funding heats up.</span></button>
         </div>
+        <div class="chart-wrap" style="margin-top:12px"><svg class="chart" id="tchart" style="height:200px" role="img" aria-label="Daily BTC funding with your fixed rate and win zone"></svg><div class="tip" id="ttip"></div></div>
+        <div class="hint">Daily BTC funding since Arc launch (APR shown on hover). The blue line is your fixed rate; the shaded side is where you win.</div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
         <div class="qtitle">Fixed rate</div>
@@ -225,6 +233,7 @@
       </div></div>
       <div class="summary">
         <p id="sumText"></p>
+        <div class="chart-wrap"><svg class="payoff" id="payoff" role="img" aria-label="Profit or loss versus average funding over the term"></svg><div class="tip" id="ptip"></div></div>
         <table class="scen" id="scen"></table>
       </div>
       <div class="checks"><span id="cWallet">Wallet connected</span><span id="cChain">On Arc mainnet</span><span id="cBal">Enough USDC</span><span id="cAllow">Deposit approved</span></div>
@@ -320,9 +329,10 @@ async function loadMarket() {
   drawChart(); renderRateChips(); updateSummary();
 }
 
-function drawChart() {
+function drawChart() { drawHistory("chart", "tip", 260); drawHistory("tchart", "ttip", 200); }
+function drawHistory(svgId, tipId, H) {
   if (!daily.length) return;
-  const svg = $("chart"), W = svg.clientWidth || 900, H = 260, L = 56, R = 118, T = 14, B = 28;
+  const svg = $(svgId); if (!svg) return; const W = svg.clientWidth || 900, L = 56, R = 118, T = 14, B = 28;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const fixed = currentFixed();
   const vals = daily.map((x) => x.rate).concat([0, fixed ?? 0]);
@@ -354,7 +364,11 @@ function drawChart() {
   });
   const avg = daily.reduce((s, x) => s + x.rate, 0) / daily.length;
   parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
-  if (fixed !== null) parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
+  if (fixed !== null) {
+    const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
+    parts.unshift(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="${side === "1" ? "var(--pos)" : "var(--neg)"}" opacity=".06" pointer-events="none"/>`);
+    parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
+  }
   // direct labels at the right end; nudge apart when the two lines are close
   let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
   if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
@@ -365,11 +379,11 @@ function drawChart() {
   svg.innerHTML = parts.join("");
   svg.querySelectorAll("rect[data-i]").forEach((el) => {
     el.addEventListener("mousemove", (ev) => {
-      const x = daily[Number(el.dataset.i)], tip = $("tip"), box = svg.parentElement.getBoundingClientRect();
+      const x = daily[Number(el.dataset.i)], tip = $(tipId), box = svg.parentElement.getBoundingClientRect();
       tip.textContent = `${dayStr(x.day)} · ${pct(x.rate)} / day · ${aprOf(x.rate)} ann.`;
       tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
     });
-    el.addEventListener("mouseleave", () => ($("tip").style.opacity = 0));
+    el.addEventListener("mouseleave", () => ($(tipId).style.opacity = 0));
   });
 }
 window.addEventListener("resize", drawChart);
@@ -494,8 +508,64 @@ function updateSummary() {
     const tr = $("scen").insertRow(); tr.insertCell().textContent = label;
     tr.insertCell().textContent = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " USDC";
   }
-  drawChart(); refreshAction();
+  drawChart(); drawPayoff(); refreshAction();
 }
+function drawPayoff() {
+  const svg = $("payoff"); const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
+  if (!(f !== null && n > 0 && m > 0 && t > 0)) { svg.innerHTML = ""; return; }
+  const pays = side === "1";
+  const W = svg.clientWidth || 800, H = 220, L = 52, R = 16, T = 18, B = 34;
+  const fA = f * 365 * 100;                                   // fixed, % APR
+  const capA = m / (n * t) * 365 * 100;                      // APR distance at which the deposit is used up
+  const span = Math.max(capA * 1.5, 6);
+  const x0 = fA - span, x1 = fA + span;
+  const pnl = (a) => { let v = n * ((a - fA) / 100 / 365) * t * (pays ? 1 : -1); return Math.max(-m, Math.min(m, v)); };
+  const X = (a) => L + (a - x0) / (x1 - x0) * (W - L - R);
+  const Y = (v) => T + (m - v) / (2 * m) * (H - T - B);
+  const mute = cssVar("--mute"), grid = cssVar("--grid");
+  const parts = [];
+  // win / lose zones
+  const winLeft = !pays;
+  parts.push(`<rect x="${X(x0)}" y="${T}" width="${X(fA) - X(x0)}" height="${H - T - B}" fill="${winLeft ? "var(--pos)" : "var(--neg)"}" opacity=".07"/>`);
+  parts.push(`<rect x="${X(fA)}" y="${T}" width="${X(x1) - X(fA)}" height="${H - T - B}" fill="${winLeft ? "var(--neg)" : "var(--pos)"}" opacity=".07"/>`);
+  for (const v of [m, 0, -m]) {
+    parts.push(`<line x1="${L}" x2="${W - R}" y1="${Y(v)}" y2="${Y(v)}" stroke="${v === 0 ? mute : grid}" stroke-width="1"/>`);
+    parts.push(`<text x="${L - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="${mute}">${v > 0 ? "+" : ""}${v.toFixed(v % 1 ? 2 : 0)}</text>`);
+  }
+  // payoff line: blue where you win, red where you lose
+  const pts = (a, b) => { const out = []; for (let i = 0; i <= 60; i++) { const a2 = a + (b - a) * i / 60; out.push(`${X(a2)},${Y(pnl(a2))}`); } return out.join(" "); };
+  const leftColor = winLeft ? "var(--pos)" : "var(--neg)", rightColor = winLeft ? "var(--neg)" : "var(--pos)";
+  parts.push(`<polyline points="${pts(x0, fA)}" fill="none" stroke="${leftColor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+  parts.push(`<polyline points="${pts(fA, x1)}" fill="none" stroke="${rightColor}" stroke-width="3" stroke-linejoin="round" stroke-linecap="round"/>`);
+  // fixed-rate marker
+  parts.push(`<line x1="${X(fA)}" x2="${X(fA)}" y1="${T}" y2="${H - B}" stroke="var(--acc)" stroke-width="2"/>`);
+  parts.push(`<text x="${X(fA)}" y="${T - 5}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--acc)">your fixed ${fA.toFixed(1)}%</text>`);
+  // zone labels
+  parts.push(`<text x="${(X(x0) + X(fA)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${leftColor}">${winLeft ? "▼ LOW: you win" : "you lose"}</text>`);
+  parts.push(`<text x="${(X(fA) + X(x1)) / 2}" y="${H - B - 8}" text-anchor="middle" font-size="12" font-weight="700" fill="${rightColor}">${winLeft ? "you lose" : "▲ HIGH: you win"}</text>`);
+  // 7-day average marker
+  const a7 = avg7();
+  if (a7 !== null) {
+    const a7A = a7 * 365 * 100;
+    if (a7A > x0 && a7A < x1) {
+      parts.push(`<circle cx="${X(a7A)}" cy="${Y(pnl(a7A))}" r="5" fill="var(--ink)" stroke="var(--surface-2)" stroke-width="2"/>`);
+      parts.push(`<text x="${X(a7A) + 8}" y="${Y(pnl(a7A)) - 8}" font-size="11" fill="var(--ink-2)">last 7 days: ${a7A.toFixed(1)}%</text>`);
+    }
+  }
+  // x axis labels
+  for (const a of [x0, (x0 + fA) / 2, fA, (fA + x1) / 2, x1]) parts.push(`<text x="${X(a)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="${mute}">${a.toFixed(1)}%</text>`);
+  parts.push(`<text x="${W - R}" y="${H - 1}" text-anchor="end" font-size="11" fill="${mute}">average BTC funding over the term (APR) →</text>`);
+  parts.push(`<text x="${L}" y="${T - 5}" font-size="11" fill="${mute}">profit / loss (USDC)</text>`);
+  parts.push(`<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="phit"/>`);
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = parts.join("");
+  $("phit").addEventListener("mousemove", (ev) => {
+    const box = svg.getBoundingClientRect(), a = x0 + (ev.clientX - box.left - L) / (W - L - R) * (x1 - x0), v = pnl(a), tip = $("ptip");
+    tip.textContent = `funding ${a.toFixed(1)}% APR → ${v >= 0 ? "+" : ""}${v.toFixed(2)} USDC`;
+    tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
+  });
+  $("phit").addEventListener("mouseleave", () => ($("ptip").style.opacity = 0));
+}
+window.addEventListener("resize", () => drawPayoff());
 document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { side = c.dataset.side; updateSummary(); }));
 document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
 $("fApr").addEventListener("input", () => { aprEdited = true; updateSummary(); });
