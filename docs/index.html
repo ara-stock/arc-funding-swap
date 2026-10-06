@@ -229,7 +229,15 @@ const SWAP_ABI = [
 ];
 const ERC20_ABI = ["function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)"];
 const MARKET = ethers.encodeBytes32String(CFG.market);
-const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true });
+// The public RPC rate-limits bursts, so never batch: one request at a time, and Multicall3 for lists.
+const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true, batchMaxCount: 1 });
+const MULTICALL = new ethers.Contract("0xcA11bde05977b3631167028862bE2a173976CA11",
+  ["function aggregate3(tuple(address target,bool allowFailure,bytes callData)[] calls) view returns (tuple(bool success,bytes returnData)[])"], read);
+async function multicall(contract, fn, argsList) {
+  const iface = contract.interface, target = await contract.getAddress();
+  const res = await MULTICALL.aggregate3(argsList.map((a) => ({ target, allowFailure: false, callData: iface.encodeFunctionData(fn, a) })));
+  return res.map((r) => iface.decodeFunctionResult(fn, r.returnData)[0]);
+}
 const oracleR = new ethers.Contract(CFG.oracle, ORACLE_ABI, read);
 const swapR = new ethers.Contract(CFG.swap, SWAP_ABI, read);
 let signer = null, me = null, daily = [];
@@ -248,7 +256,7 @@ async function loadMarket() {
   const [first, last, started] = await oracleR.range(MARKET);
   if (!started) { $("chartNote").textContent = "No funding values posted yet."; return; }
   const days = []; for (let d = Number(first); d <= Number(last); d++) days.push(d);
-  const idx = await Promise.all(days.map((d) => oracleR.indexAt(MARKET, d)));
+  const idx = await multicall(oracleR, "indexAt", days.map((d) => [MARKET, d]));
   daily = [];
   for (let i = 1; i < idx.length; i++) daily.push({ day: days[i] - 1, rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
   const lastD = daily[daily.length - 1];
@@ -319,8 +327,10 @@ async function loadSwaps() {
     td.innerHTML = "No offers yet. <a href=\"#create\">Post the first one</a>."; return;
   }
   const nowDay = Math.floor(Date.now() / 86400000);
-  for (let id = n - 1; id >= 0; id--) {
-    const s = await swapR.getSwap(id), st = Number(s.state);
+  const ids = []; for (let id = n - 1; id >= 0; id--) ids.push(id);
+  const all = await multicall(swapR, "getSwap", ids.map((id) => [id]));
+  for (const [k, id] of ids.entries()) {
+    const s = all[k], st = Number(s.state);
     const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
     const tr = body.insertRow();
     tr.insertCell().textContent = String(id);
@@ -414,8 +424,10 @@ for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
   $("s" + id).href = `https://repo.sourcify.dev/contracts/full_match/${CFG.chainId}/${addr}/`;
 }
 updateSummary();
-loadMarket().catch((e) => ($("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`));
-loadSwaps().catch((e) => log(e.message));
+(async () => {
+  try { await loadMarket(); } catch (e) { $("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`; }
+  try { await loadSwaps(); } catch (e) { log(e.shortMessage || e.message); }
+})();
 </script>
 </body>
 </html>
