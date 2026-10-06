@@ -86,6 +86,29 @@
   .warn { background:var(--warn-bg); border:1px solid var(--line); border-left:4px solid var(--warn-line); border-radius:10px; padding:14px 16px; font-size:14px; color:var(--ink-2); }
   ul.clean { margin:0; padding-left:18px; color:var(--ink-2); font-size:15px; } ul.clean li { margin:4px 0; }
   #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--mute); max-height:140px; overflow:auto; margin:0; }
+
+  /* order ticket */
+  .q { display:grid; grid-template-columns:32px 1fr; gap:14px; padding:18px 0; border-top:1px solid var(--line); }
+  .q:first-child { border-top:0; padding-top:4px; }
+  .qn { width:28px; height:28px; border-radius:50%; background:var(--acc); color:var(--acc-ink); font-weight:700; font-size:14px; display:flex; align-items:center; justify-content:center; }
+  .qtitle { font-weight:700; font-size:16px; margin:2px 0 10px; }
+  .choices { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+  .choice { text-align:left; background:var(--surface); color:var(--ink); border:1.5px solid var(--line); border-radius:12px; padding:14px 16px; font-weight:400; }
+  .choice b { display:block; font-size:16px; margin-bottom:3px; }
+  .choice span { color:var(--ink-2); font-size:14px; }
+  .choice[aria-pressed="true"] { border-color:var(--acc); background:var(--acc-soft); box-shadow:0 0 0 1px var(--acc) inset; }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+  .chip { background:var(--surface-2); color:var(--ink); border:1px solid var(--line); border-radius:999px; padding:5px 12px; font-size:13px; font-weight:600; }
+  .chip[aria-pressed="true"] { background:var(--acc-soft); color:var(--acc); border-color:var(--acc); }
+  .inrow { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:16px; }
+  .unit { position:relative; } .unit input { padding-right:64px; } .unit i { position:absolute; right:12px; top:10px; font-style:normal; color:var(--mute); font-size:14px; }
+  details { margin-top:6px; } summary { cursor:pointer; color:var(--ink-2); font-size:14px; font-weight:600; }
+  .checks { display:flex; flex-wrap:wrap; gap:8px 18px; font-size:13px; color:var(--ink-2); margin-top:14px; }
+  .checks span::before { content:"○"; margin-right:6px; color:var(--mute); }
+  .checks span.ok::before { content:"✓"; color:var(--pos); font-weight:700; }
+  .checks span.bad::before { content:"!"; color:var(--neg); font-weight:700; }
+  .action { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:14px; }
+  .action button { padding:12px 22px; font-size:15px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
 </style>
@@ -164,22 +187,48 @@
 
   <section id="create">
     <div class="kicker">Create</div>
-    <h2>Post an offer</h2>
-    <p class="sub">Connect a wallet on Arc mainnet. Posting asks for two signatures: a USDC approval for your deposit, then the offer itself.</p>
+    <h2>Post an offer in four choices</h2>
+    <p class="sub">You set the terms; someone else takes the other side. Your deposit stays in the contract until settlement, and you can cancel any time before the offer is taken.</p>
     <div class="card">
-      <div class="form">
-        <div><label for="fSide">Your position</label><select id="fSide"><option value="1">Pay fixed, receive actual funding</option><option value="0">Receive fixed, pay actual funding</option></select><div class="hint">Receive fixed = lock in a funding income.</div></div>
-        <div><label for="fRate">Fixed rate (% per day)</label><input id="fRate" value="0.025" inputmode="decimal"><div class="hint" id="fRateApr"></div></div>
-        <div><label for="fNotional">Size / notional (USDC)</label><input id="fNotional" value="1000" inputmode="decimal"><div class="hint">Funding is paid on this amount.</div></div>
-        <div><label for="fMargin">Deposit each side (USDC)</label><input id="fMargin" value="10" inputmode="decimal"><div class="hint">Max loss for either side. Capped at 100.</div></div>
-        <div><label for="fTenor">Term (days)</label><input id="fTenor" value="7" inputmode="numeric"><div class="hint">1–30 whole UTC days.</div></div>
-        <div><label for="fExpiry">Offer open for (hours)</label><input id="fExpiry" value="24" inputmode="numeric"><div class="hint">Cancel any time before it is taken.</div></div>
-      </div>
+      <div class="q"><div class="qn">1</div><div>
+        <div class="qtitle">What do you want?</div>
+        <div class="choices">
+          <button class="choice" data-side="0" aria-pressed="true"><b>Lock in a funding income</b><span>Receive a fixed rate and pay the actual funding. For basis traders, or if you expect funding to fall.</span></button>
+          <button class="choice" data-side="1" aria-pressed="false"><b>Bet that funding rises</b><span>Pay a fixed rate and receive the actual funding. You win if funding averages above your rate.</span></button>
+        </div>
+      </div></div>
+      <div class="q"><div class="qn">2</div><div>
+        <div class="qtitle">Fixed rate</div>
+        <div class="unit" style="max-width:280px"><input id="fApr" value="9.0" inputmode="decimal" aria-label="Fixed rate, annualised percent"><i>% APR</i></div>
+        <div class="chips" id="rateChips"></div>
+        <div class="hint" id="fRateDay"></div>
+      </div></div>
+      <div class="q"><div class="qn">3</div><div>
+        <div class="inrow">
+          <div><div class="qtitle">Size</div>
+            <div class="unit"><input id="fNotional" value="1000" inputmode="decimal" aria-label="Notional in USDC"><i>USDC</i></div>
+            <div class="chips" data-for="fNotional"><button class="chip" data-v="100">100</button><button class="chip" data-v="500">500</button><button class="chip" data-v="1000">1,000</button><button class="chip" data-v="2500">2,500</button></div>
+            <div class="hint">Funding is calculated on this amount. You don't need to hold it.</div></div>
+          <div><div class="qtitle">Term</div>
+            <div class="unit"><input id="fTenor" value="7" inputmode="numeric" aria-label="Term in days"><i>days</i></div>
+            <div class="chips" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
+            <div class="hint">Starts at the next UTC midnight.</div></div>
+        </div>
+      </div></div>
+      <div class="q"><div class="qn">4</div><div>
+        <div class="qtitle">Deposit = your maximum loss</div>
+        <div class="unit" style="max-width:280px"><input id="fMargin" value="10" inputmode="decimal" aria-label="Deposit in USDC"><i>USDC</i></div>
+        <div class="hint" id="marginHint"></div>
+        <details><summary>Advanced</summary>
+          <div style="max-width:280px;margin-top:10px"><label for="fExpiry">Offer stays open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
+        </details>
+      </div></div>
       <div class="summary">
         <p id="sumText"></p>
         <table class="scen" id="scen"></table>
       </div>
-      <div class="row"><button id="create-btn" disabled>Approve &amp; post offer</button><span class="sub mono" style="margin:0" id="me">Wallet not connected</span></div>
+      <div class="checks"><span id="cWallet">Wallet connected</span><span id="cChain">On Arc mainnet</span><span id="cBal">Enough USDC</span><span id="cAllow">Deposit approved</span></div>
+      <div class="action"><button id="actionBtn">Connect wallet</button><span class="sub" style="margin:0;font-size:14px" id="actionNote">Two quick signatures: approve the deposit, then post.</span></div>
     </div>
   </section>
 
@@ -227,7 +276,7 @@ const SWAP_ABI = [
   "function createOffer(bytes32,bool,uint128,uint128,int256,uint64,uint64) returns (uint256)",
   "function cancelOffer(uint256)", "function takeOffer(uint256)", "function settle(uint256)", "function refundIfOracleFailed(uint256)",
 ];
-const ERC20_ABI = ["function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)"];
+const ERC20_ABI = ["function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)", "function balanceOf(address) view returns (uint256)"];
 const MARKET = ethers.encodeBytes32String(CFG.market);
 // The public RPC rate-limits bursts, so never batch: one request at a time, and Multicall3 for lists.
 const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true, batchMaxCount: 1 });
@@ -268,7 +317,7 @@ async function loadMarket() {
   $("chartNote").textContent = `${daily.length} days since ${dayStr(daily[0].day)} · average ${pct(avg)} per day (${aprOf(avg)} annualised)`;
   $("tbl").textContent = "";
   for (const x of [...daily].reverse()) { const tr = $("tbl").insertRow(); [dayStr(x.day), pct(x.rate), aprOf(x.rate)].forEach((t) => (tr.insertCell().textContent = t)); }
-  drawChart(); updateSummary();
+  drawChart(); renderRateChips(); updateSummary();
 }
 
 function drawChart() {
@@ -353,7 +402,7 @@ async function loadSwaps() {
     const act = tr.insertCell();
     const btn = (label, fn, ghost) => { const b = document.createElement("button"); b.textContent = label; if (ghost) b.className = "ghost"; b.disabled = !signer; b.onclick = fn; act.appendChild(b); };
     if (st === 1 && me && me.toLowerCase() === s.maker.toLowerCase()) btn("Cancel", () => tx("cancel", (c) => c.cancelOffer(id)), true);
-    else if (st === 1 && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take (${s.makerPaysFixed ? "receive" : "pay"} fixed)`, () => take(id, s.margin));
+    else if (st === 1 && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take: ${s.makerPaysFixed ? "receive" : "pay"} fixed`, () => take(id, s));
     if (st === 2 && nowDay >= Number(s.startDay + s.tenorDays)) {
       btn("Settle", () => tx("settle", (c) => c.settle(id)));
       if (nowDay >= Number(s.startDay + s.tenorDays) + 7) btn("Refund", () => tx("refund", (c) => c.refundIfOracleFailed(id)), true);
@@ -376,55 +425,138 @@ async function tx(label, call) {
     await loadSwaps();
   } catch (e) { log(`${label} failed: ${e.shortMessage || e.message}`); }
 }
-async function take(id, margin) { try { await ensureAllowance(margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; } await tx(`take #${id}`, (c) => c.takeOffer(id)); }
+async function take(id, s) {
+  const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
+  const youPay = s.makerPaysFixed; // the taker is on the other side
+  const msg = `Take offer #${id}?\n\nYou will ${youPay ? "PAY the actual BTC funding and RECEIVE" : "PAY"} a fixed ${aprOf(rate)} APR${youPay ? "" : " and RECEIVE the actual BTC funding"} on ${usdc(s.notional)} USDC for ${s.tenorDays} day(s), starting at the next UTC midnight.\n\nDeposit: ${usdc(s.margin)} USDC. This is the most you can lose.\nYour wallet will ask to approve the deposit (if needed) and then to take the offer.`;
+  if (!window.confirm(msg)) return;
+  try { await ensureAllowance(s.margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; }
+  await tx(`take #${id}`, (c) => c.takeOffer(id));
+  await readBalances(); refreshAction();
+}
 
 // ---------------------------------------------------------------- create form
-function currentFixed() { const v = Number($("fRate").value); return Number.isFinite(v) ? v / 100 : null; }
+let side = "0", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
+const aprToDay = (apr) => apr / 100 / 365;
+function currentFixed() { const v = Number($("fApr").value); return Number.isFinite(v) ? aprToDay(v) : null; }
 function readForm() {
   return {
-    paysFixed: $("fSide").value === "1",
-    rate: ethers.parseUnits((Number($("fRate").value) / 100).toFixed(18), 18),
+    paysFixed: side === "1",
+    rate: ethers.parseUnits(aprToDay(Number($("fApr").value)).toFixed(18), 18),
     notional: ethers.parseUnits($("fNotional").value || "0", 6),
     margin: ethers.parseUnits($("fMargin").value || "0", 6),
     tenor: BigInt(parseInt($("fTenor").value || "0", 10)),
     expiry: BigInt(Math.floor(Date.now() / 1000) + 3600 * parseInt($("fExpiry").value || "0", 10)),
   };
 }
+function suggestedMargin() {
+  // enough to cover funding missing the fixed rate by 0.03%/day (~11% APR) over the term
+  const n = Number($("fNotional").value), t = parseInt($("fTenor").value, 10);
+  if (!(n > 0 && t > 0)) return null;
+  return Math.min(100, Math.max(1, Math.ceil(n * 0.0003 * t)));
+}
+function avg7() { return daily.length ? daily.slice(-7).reduce((a, x) => a + x.rate, 0) / Math.min(7, daily.length) : null; }
+function renderRateChips() {
+  const a = avg7(); const box = $("rateChips"); box.textContent = "";
+  if (a === null) return;
+  const base = Math.round(a * 365 * 1000) / 10;
+  for (const [label, v] of [[`7-day avg ${base.toFixed(1)}%`, base], [`${(base - 2).toFixed(1)}%`, base - 2], [`${(base + 2).toFixed(1)}%`, base + 2]]) {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = label;
+    b.onclick = () => { $("fApr").value = v.toFixed(1); aprEdited = true; updateSummary(); };
+    box.appendChild(b);
+  }
+  if (!aprEdited) $("fApr").value = base.toFixed(1);
+}
+function syncChips() {
+  document.querySelectorAll(".chips[data-for]").forEach((box) => {
+    const v = $(box.dataset.for).value;
+    box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === v)));
+  });
+  document.querySelectorAll(".choice").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.side === side)));
+}
 function updateSummary() {
+  const sm = suggestedMargin();
+  if (!marginEdited && sm !== null) $("fMargin").value = String(sm);
+  $("marginHint").textContent = sm !== null ? `Suggested ${sm} USDC: covers funding missing your rate by about 11% APR over the term. Max 100.` : "";
   const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
-  const pays = $("fSide").value === "1";
-  if (!(f !== null && n > 0 && m > 0 && t > 0)) { $("sumText").textContent = ""; $("scen").textContent = ""; return; }
-  $("fRateApr").textContent = `= ${aprOf(f)} annualised`;
-  $("sumText").innerHTML = `You <b>${pays ? "pay" : "receive"} ${pct(f, 3)}/day fixed</b> and <b>${pays ? "receive" : "pay"} the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} days. Most either side can lose: <b>${m} USDC</b>.`;
-  const ref = daily.length ? daily.slice(-7).reduce((s, x) => s + x.rate, 0) / Math.min(7, daily.length) : f;
-  const rows = [["If funding averages 0.010%/day lower than fixed", f - 0.0001], ["If funding averages exactly the fixed rate", f], ["If funding averages 0.010%/day higher than fixed", f + 0.0001], [`If funding repeats the last 7 days (${pct(ref, 3)}/day)`, ref]];
+  const pays = side === "1";
+  syncChips();
+  if (!(f !== null && n > 0 && m > 0 && t > 0)) { $("sumText").textContent = ""; $("scen").textContent = ""; refreshAction(); return; }
+  $("fRateDay").textContent = `= ${pct(f, 4)} per day`;
+  $("sumText").innerHTML = pays
+    ? `You <b>pay ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>receive the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages above your rate. Most you can lose: <b>${m} USDC</b>.`
+    : `You <b>receive ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>pay the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages below your rate. Most you can lose: <b>${m} USDC</b>.`;
+  const ref = avg7() ?? f;
+  const rows = [[`If funding averages ${(f * 365 * 100 - 3.65).toFixed(1)}% APR (lower)`, f - 0.0001], ["If funding equals your fixed rate", f], [`If funding averages ${(f * 365 * 100 + 3.65).toFixed(1)}% APR (higher)`, f + 0.0001], [`If the last 7 days repeat (${aprOf(ref)} APR)`, ref]];
   $("scen").innerHTML = "";
   for (const [label, actual] of rows) {
     let pnl = n * (actual - f) * t * (pays ? 1 : -1); pnl = Math.max(-m, Math.min(m, pnl));
     const tr = $("scen").insertRow(); tr.insertCell().textContent = label;
     tr.insertCell().textContent = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " USDC";
   }
-  drawChart();
+  drawChart(); refreshAction();
 }
-["fSide", "fRate", "fNotional", "fMargin", "fTenor"].forEach((id) => $(id).addEventListener("input", updateSummary));
+document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { side = c.dataset.side; updateSummary(); }));
+document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
+$("fApr").addEventListener("input", () => { aprEdited = true; updateSummary(); });
+$("fMargin").addEventListener("input", () => { marginEdited = true; updateSummary(); });
+["fNotional", "fTenor", "fExpiry"].forEach((id) => $(id).addEventListener("input", updateSummary));
 
-// ---------------------------------------------------------------- wallet
-$("connect").onclick = async () => {
+// ---------------------------------------------------------------- wallet & the one action button
+let onArc = false;
+function setCheck(id, state, text) { const el = $(id); el.className = state; if (text) el.textContent = text; }
+async function readBalances() {
+  if (!signer || !onArc) { usdcBal = allowance = null; return; }
+  const token = new ethers.Contract(CFG.usdc, ERC20_ABI, read);
+  [usdcBal, allowance] = await Promise.all([token.balanceOf(me), token.allowance(me, CFG.swap)]);
+}
+function refreshAction() {
+  const btn = $("actionBtn"), note = $("actionNote");
+  let need = null; try { need = readForm().margin; } catch { need = null; }
+  setCheck("cWallet", signer ? "ok" : "", signer ? `Wallet ${short(me)}` : "Wallet connected");
+  setCheck("cChain", signer ? (onArc ? "ok" : "bad") : "");
+  const enough = usdcBal !== null && need !== null && usdcBal >= need;
+  setCheck("cBal", usdcBal === null ? "" : enough ? "ok" : "bad", usdcBal === null ? "Enough USDC" : `${usdc(usdcBal)} USDC on Arc`);
+  const approved = allowance !== null && need !== null && allowance >= need;
+  setCheck("cAllow", allowance === null ? "" : approved ? "ok" : "", "Deposit approved");
+  btn.disabled = false;
+  if (!signer) { btn.textContent = "Connect wallet"; btn.onclick = connect; note.textContent = "MetaMask, Rabby or any EVM wallet."; return; }
+  if (!onArc) { btn.textContent = "Switch to Arc"; btn.onclick = connect; note.textContent = "Arc mainnet, chain 5042."; return; }
+  if (!enough) { btn.textContent = "Not enough USDC"; btn.disabled = true; note.innerHTML = `Bridge USDC to Arc with <a href="https://across.to" target="_blank" rel="noopener">Across</a>, then refresh.`; return; }
+  if (!approved) { btn.textContent = `Approve ${usdc(need)} USDC`; btn.onclick = approve; note.textContent = "Step 1 of 2: lets the contract take your deposit."; return; }
+  btn.textContent = "Post offer"; btn.onclick = post; note.textContent = "Step 2 of 2: you can cancel any time before it is taken.";
+}
+async function connect() {
   if (!window.ethereum) { log("No browser wallet found. Install MetaMask or Rabby."); return; }
   try {
     await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x" + CFG.chainId.toString(16), chainName: "Arc", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: [CFG.rpc], blockExplorerUrls: [CFG.explorer] }] });
+    await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x" + CFG.chainId.toString(16) }] }).catch(() => {});
     const bp = new ethers.BrowserProvider(window.ethereum);
     signer = await bp.getSigner(); me = await signer.getAddress();
-    if (Number((await bp.getNetwork()).chainId) !== CFG.chainId) { log("Switch your wallet to Arc mainnet."); signer = null; return; }
-    $("me").textContent = `Connected ${short(me)}`; $("connect").textContent = short(me); $("create-btn").disabled = false;
-    log(`connected ${me}`); await loadSwaps();
+    onArc = Number((await bp.getNetwork()).chainId) === CFG.chainId;
+    $("connect").textContent = short(me);
+    log(`connected ${me}${onArc ? "" : " (not on Arc)"}`);
+    await readBalances(); refreshAction(); await loadSwaps();
   } catch (e) { log(`connect failed: ${e.shortMessage || e.message}`); }
-};
-$("create-btn").onclick = async () => {
+}
+async function approve() {
+  const btn = $("actionBtn"); btn.disabled = true; btn.textContent = "Approving…";
+  try {
+    const token = new ethers.Contract(CFG.usdc, ERC20_ABI, signer);
+    const r = await (await token.approve(CFG.swap, readForm().margin)).wait();
+    log(`approved: ${r.hash}`);
+  } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); }
+  await readBalances(); refreshAction();
+}
+async function post() {
+  const btn = $("actionBtn"); btn.disabled = true; btn.textContent = "Posting…";
   const f = readForm();
-  try { await ensureAllowance(f.margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; }
   await tx("post offer", (c) => c.createOffer(MARKET, f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
-};
+  await readBalances(); refreshAction();
+  location.hash = "#offers";
+}
+$("connect").onclick = connect;
+if (window.ethereum) { window.ethereum.on?.("accountsChanged", () => connect()); window.ethereum.on?.("chainChanged", () => connect()); }
 
 // ---------------------------------------------------------------- boot
 for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
