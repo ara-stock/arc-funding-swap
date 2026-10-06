@@ -130,6 +130,7 @@
   .hl .choice { text-align:center; padding:18px 14px; }
   .hl .choice em { font-size:15px; padding:4px 12px; }
   @media (max-width:560px) { .hl { grid-template-columns:1fr; } }
+  @media (max-width:560px) { .q { grid-template-columns:1fr; } .q .qn { margin-bottom:4px; } }
   .chips.big .chip { padding:9px 16px; font-size:14px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
@@ -363,7 +364,7 @@ function drawChart() {
 // series: [{label, short, rate}] with rate expressed per day; ticket mode speaks APR and colours by win/lose
 function drawHistory(svgId, tipId, H, series, ticket) {
   const svg = $(svgId); if (!svg || !series.length) return;
-  const W = svg.clientWidth || 900, L = 56, R = 118, T = 22, B = 28;
+  const W = svg.clientWidth || 900, narrow = W < 520, L = narrow ? 38 : 56, R = narrow ? 78 : 118, T = 22, B = 28;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const fmt = (r, d) => ticket ? (r * 365 * 100).toFixed(1) + "%" : (r * 100).toFixed(d) + "%";
   const fixed = currentFixed();
@@ -404,13 +405,13 @@ function drawHistory(svgId, tipId, H, series, ticket) {
   if (ticket && fixed !== null) {
     const wins = series.filter((x) => (x.rate > fixed) === (side === "1")).length;
     const unit = tRange === "h48" && hourly.length ? "hours" : "days";
-    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins} of the last ${series.length} ${unit} were on your side</text>`);
+    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins}/${series.length} ${unit}${narrow ? "" : " were"} on your side</text>`);
   }
   let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
   if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
-  parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">avg ${fmt(avg, 3)}</text>`);
-  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="12" font-weight="700" fill="var(--acc)">${ticket ? "your line " : "fixed "}${fmt(fixed, 3)}</text>`);
-  const every = Math.max(1, Math.ceil(series.length / 6));
+  parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">${narrow ? "" : "avg "}${fmt(avg, 3)}</text>`);
+  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="12" font-weight="700" fill="var(--acc)">${narrow ? "" : ticket ? "your line " : "fixed "}${fmt(fixed, 3)}</text>`);
+  const every = Math.max(1, Math.ceil(series.length / (narrow ? 3 : 6)));
   series.forEach((x, i) => { if (i % every === 0 || i === series.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${x.short}</text>`); });
   svg.innerHTML = parts.join("");
   svg.querySelectorAll("rect[data-i]").forEach((el) => {
