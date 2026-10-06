@@ -20,6 +20,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import shutil
 import subprocess
 import sys
 import time
@@ -32,7 +33,7 @@ ARC_RPC = os.environ.get("ARC_RPC", "https://rpc.mainnet.arc.io")
 COIN = os.environ.get("FUNDING_COIN", "BTC")
 MARKET = os.environ.get("FUNDING_MARKET", "HL:BTC")  # bytes32 label used on chain
 FIRST_DAY = int(os.environ.get("FIRST_DAY", "20712"))  # 2026-09-16, Arc mainnet launch
-ORACLE = os.environ.get("ORACLE_ADDRESS", "")
+ORACLE = os.environ.get("ORACLE_ADDRESS", "0xb2FF125422a9ED3fd42c080B3548b4071AEC8Be6")
 ACCOUNT = os.environ.get("PUBLISHER_ACCOUNT", "arc-funding-publisher")  # cast keystore name
 PASSWORD_FILE = os.environ.get(
     "PUBLISHER_PASSWORD_FILE", str(Path.home() / ".config/arc-funding/keystore-password")
@@ -98,7 +99,8 @@ def market_bytes32() -> str:
 
 
 def cast(*args: str) -> str:
-    return subprocess.run(["cast", *args], check=True, capture_output=True, text=True).stdout.strip()
+    exe = shutil.which("cast") or str(Path.home() / ".foundry/bin/cast")
+    return subprocess.run([exe, *args], check=True, capture_output=True, text=True).stdout.strip()
 
 
 def oracle_last_day() -> int | None:

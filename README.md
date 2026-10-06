@@ -7,7 +7,13 @@ Perp funding is the largest recurring cash flow in crypto derivatives, and it is
 trader holding spot BTC and short BTC-PERP earns floating funding. With this contract they can lock
 in a fixed rate for the next few days. A trader who expects funding to rise takes the other side.
 
-**Live:** https://ara-stock.github.io/arc-funding-swap/ (Arc mainnet)
+**Live:** https://ara-stock.github.io/arc-funding-swap/ (Arc mainnet, chain 5042)
+
+| Contract | Address |
+|---|---|
+| FundingIndexOracle | [`0xb2FF125422a9ED3fd42c080B3548b4071AEC8Be6`](https://explorer.arc.io/address/0xb2FF125422a9ED3fd42c080B3548b4071AEC8Be6) |
+| FundingRateSwap | [`0x050d05E0e265F412Ed9064518942a6B1d0Bbee39`](https://explorer.arc.io/address/0x050d05E0e265F412Ed9064518942a6B1d0Bbee39) |
+| Publisher | `0xDd14e65957eF26fFa2174C2E3C39Bd3eE2B084ED` |
 
 ## Why on-chain
 
