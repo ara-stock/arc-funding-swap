@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <title>Funding Swap on Arc</title>
+  <rect width="512" height="512" rx="112" fill="#1d4ed8"/>
+  <!-- left: funding that changes every hour; right: the same flow, fixed -->
+  <path d="M70 256 C 92 136, 128 136, 148 256 S 206 376, 228 256"
+        fill="none" stroke="#ffffff" stroke-opacity=".55" stroke-width="44" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M248 256 H 440" fill="none" stroke="#ffffff" stroke-width="44" stroke-linecap="round"/>
+  <circle cx="248" cy="256" r="40" fill="#ffffff"/>
+  <circle cx="248" cy="256" r="16" fill="#1d4ed8"/>
+</svg>
