@@ -111,9 +111,8 @@
   .action button { padding:12px 22px; font-size:15px; }
 
   .choice em { font-style:normal; font-weight:800; font-size:13px; letter-spacing:.08em; display:inline-block; padding:2px 8px; border-radius:6px; margin-bottom:8px; color:#fff; }
-  .choice.low em { background:var(--neg); } .choice.high em { background:var(--pos); }
-  .choice.low[aria-pressed="true"] { border-color:var(--neg); background:color-mix(in srgb, var(--neg) 8%, var(--surface)); box-shadow:0 0 0 1px var(--neg) inset; }
-  .choice.high[aria-pressed="true"] { border-color:var(--pos); background:color-mix(in srgb, var(--pos) 8%, var(--surface)); box-shadow:0 0 0 1px var(--pos) inset; }
+  .choice em { background:var(--ink); color:var(--bg); }
+  .choice[aria-pressed="true"] em { background:var(--acc); color:var(--acc-ink); }
   svg.payoff { width:100%; height:220px; display:block; margin:6px 0 4px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
@@ -173,7 +172,7 @@
     <p class="sub">Each bar is one UTC day of funding, computed from the on‑chain index. Bars above zero mean longs paid shorts. Hover a bar for the exact value.</p>
     <div class="card">
       <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily BTC funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
-      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span><span style="--c:color-mix(in srgb, var(--pos) 25%, transparent)">Your win zone (from the order form)</span></div>
+      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span><span style="--c:color-mix(in srgb, var(--acc) 25%, transparent)">Your win zone (from the order form)</span></div>
       <div class="row" style="justify-content:space-between;margin-top:10px"><span class="sub" style="margin:0;font-size:13px" id="chartNote">Loading on‑chain data…</span><button class="toggle" id="tblToggle">Show as table</button></div>
       <div class="scroll" id="tblWrap" hidden><table class="tbl"><thead><tr><th>Day (UTC)</th><th>Funding / day</th><th>Annualised</th></tr></thead><tbody id="tbl"></tbody></table></div>
     </div>
@@ -203,7 +202,7 @@
           <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Funding goes above my rate</b><span>Pay a fixed rate, receive the actual funding. Wins if funding heats up.</span></button>
         </div>
         <div class="chart-wrap" style="margin-top:12px"><svg class="chart" id="tchart" style="height:200px" role="img" aria-label="Daily BTC funding with your fixed rate and win zone"></svg><div class="tip" id="ttip"></div></div>
-        <div class="hint">Daily BTC funding since Arc launch (APR shown on hover). The blue line is your fixed rate; the shaded side is where you win.</div>
+        <div class="hint">Daily BTC funding since Arc launch, annualised. The line is your fixed rate; the shaded side is where you win.</div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
         <div class="qtitle">Fixed rate</div>
@@ -332,6 +331,8 @@ async function loadMarket() {
 function drawChart() { drawHistory("chart", "tip", 260); drawHistory("tchart", "ttip", 200); }
 function drawHistory(svgId, tipId, H) {
   if (!daily.length) return;
+  const apr = svgId === "tchart";                       // ticket chart speaks APR like the form
+  const fmt = (r, d) => apr ? (r * 365 * 100).toFixed(1) + "%" : (r * 100).toFixed(d) + "%";
   const svg = $(svgId); if (!svg) return; const W = svg.clientWidth || 900, L = 56, R = 118, T = 14, B = 28;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
   const fixed = currentFixed();
@@ -345,7 +346,7 @@ function drawHistory(svgId, tipId, H) {
   const rawStep = (max - min) / 4, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const tickStep = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= rawStep);
   for (let v = Math.ceil(min / tickStep) * tickStep; v <= max + 1e-15; v += tickStep) {
-    const yy = y(v), lbl = (v * 100).toFixed(Math.max(0, -Math.floor(Math.log10(tickStep * 100)) + 0));
+    const yy = y(v), lbl = apr ? (v * 365 * 100).toFixed(0) : (v * 100).toFixed(Math.max(0, -Math.floor(Math.log10(tickStep * 100)) + 0));
     parts.push(`<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`);
     parts.push(`<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="${mute}">${Math.abs(v) < tickStep / 2 ? "0" : lbl}%</text>`);
   }
@@ -366,14 +367,15 @@ function drawHistory(svgId, tipId, H) {
   parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
   if (fixed !== null) {
     const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
-    parts.unshift(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="${side === "1" ? "var(--pos)" : "var(--neg)"}" opacity=".06" pointer-events="none"/>`);
+    parts.unshift(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="var(--acc)" opacity=".08" pointer-events="none"/>`);
+    parts.push(`<text x="${L + 8}" y="${side === "1" ? T + 14 : H - B - 8}" font-size="11" font-weight="700" fill="var(--acc)">${side === "1" ? "▲ HIGH wins above the line" : "▼ LOW wins below the line"}</text>`);
     parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
   }
   // direct labels at the right end; nudge apart when the two lines are close
   let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
   if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
-  parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">avg ${pct(avg, 3)}</text>`);
-  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="11" fill="var(--acc)">fixed ${pct(fixed, 3)}</text>`);
+  parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">avg ${fmt(avg, 3)}</text>`);
+  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="11" fill="var(--acc)">fixed ${fmt(fixed, 3)}</text>`);
   const step = Math.max(1, Math.ceil(daily.length / 6));
   daily.forEach((x, i) => { if (i % step === 0 || i === daily.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${dayStr(x.day).slice(5)}</text>`); });
   svg.innerHTML = parts.join("");
