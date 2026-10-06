@@ -4,91 +4,226 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Funding Swap on Arc</title>
-<meta name="description" content="Peer-to-peer fixed-for-floating swaps on Hyperliquid BTC perpetual funding, settled in USDC on Arc.">
+<meta name="description" content="Lock in perpetual funding, or take the other side. Peer-to-peer fixed-for-floating swaps on Hyperliquid BTC-PERP funding, settled in USDC on Arc mainnet.">
 <style>
-  :root { --bg:#f7f7f5; --card:#fff; --ink:#1b1f1d; --mute:#66706b; --line:#e2e5e1; --acc:#1f6f5c; --bad:#b4442f; }
-  @media (prefers-color-scheme: dark) { :root { --bg:#121513; --card:#1a1e1b; --ink:#e9ece9; --mute:#9aa49e; --line:#2b312d; --acc:#4fbf9f; --bad:#e2775f; } }
-  * { box-sizing: border-box; }
-  body { margin:0; background:var(--bg); color:var(--ink); font:15px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif; }
-  main { max-width:960px; margin:0 auto; padding:24px 16px 64px; }
-  h1 { font-size:24px; margin:0 0 4px; } h2 { font-size:15px; text-transform:uppercase; letter-spacing:.05em; color:var(--mute); margin:28px 0 8px; }
-  .sub { color:var(--mute); margin:0 0 12px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:8px; padding:14px 16px; }
-  .warn { border-left:3px solid var(--bad); }
-  table { width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; font-size:14px; }
-  th, td { text-align:left; padding:6px 8px 6px 0; border-bottom:1px solid var(--line); vertical-align:top; }
-  th { color:var(--mute); font-weight:500; font-size:12px; text-transform:uppercase; }
-  .wrap { overflow-x:auto; }
-  button { background:var(--acc); color:#fff; border:0; border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
-  button.secondary { background:transparent; color:var(--acc); border:1px solid var(--acc); }
-  button:disabled { opacity:.5; cursor:default; }
-  input, select { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--bg); color:var(--ink); width:100%; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px; }
-  label { font-size:12px; color:var(--mute); display:block; margin-bottom:2px; }
-  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
-  .mono { font-family:ui-monospace,Menlo,monospace; font-size:13px; }
-  #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--mute); max-height:160px; overflow:auto; }
-  svg { width:100%; height:180px; display:block; }
-  a { color:var(--acc); }
+  :root {
+    --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --ink:#0f172a; --ink-2:#475569; --mute:#64748b;
+    --line:#e2e8f0; --grid:#e8ecf1; --acc:#1d4ed8; --acc-ink:#ffffff; --acc-soft:#e8efff;
+    --pos:#2a78d6; --neg:#e34948; --warn-bg:#fff7ed; --warn-line:#f59e0b; --shadow:0 1px 2px rgba(15,23,42,.06),0 4px 16px rgba(15,23,42,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg:#0f1115; --surface:#16181d; --surface-2:#1d2027; --ink:#e8ebf0; --ink-2:#b4bccb; --mute:#8a93a3;
+      --line:#2a2e37; --grid:#242831; --acc:#6b93ff; --acc-ink:#0f1115; --acc-soft:#1c2540;
+      --pos:#3987e5; --neg:#e66767; --warn-bg:#231a0e; --warn-line:#d58a12; --shadow:none;
+    }
+  }
+  * { box-sizing:border-box; }
+  html { scroll-behavior:smooth; }
+  body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif; }
+  a { color:var(--acc); text-decoration:none; } a:hover { text-decoration:underline; }
+  .wrap { max-width:1080px; margin:0 auto; padding:0 16px; }
+  nav { position:sticky; top:0; z-index:5; background:color-mix(in srgb, var(--bg) 88%, transparent); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  nav .wrap { display:flex; align-items:center; gap:20px; height:56px; }
+  .brand { font-weight:700; letter-spacing:-.01em; color:var(--ink); display:flex; align-items:center; gap:8px; }
+  .brand i { display:inline-block; width:22px; height:22px; border-radius:6px; background:linear-gradient(135deg,var(--pos),var(--acc)); }
+  nav .links { display:flex; gap:18px; margin-left:auto; font-size:14px; }
+  nav .links a { color:var(--ink-2); }
+  @media (max-width:720px) { nav .links { display:none; } }
+  button, .btn { font:inherit; font-weight:600; font-size:14px; border-radius:8px; padding:9px 16px; cursor:pointer; border:1px solid var(--acc); background:var(--acc); color:var(--acc-ink); display:inline-block; }
+  .btn.ghost, button.ghost { background:transparent; color:var(--acc); }
+  button:disabled { opacity:.45; cursor:default; }
+  section { padding:44px 0 8px; }
+  h1 { font-size:clamp(30px,5vw,46px); line-height:1.1; letter-spacing:-.02em; margin:0 0 14px; }
+  h2 { font-size:24px; letter-spacing:-.01em; margin:0 0 6px; }
+  .lead { font-size:18px; color:var(--ink-2); max-width:680px; margin:0 0 22px; }
+  .kicker { font-size:13px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--acc); margin-bottom:10px; }
+  .sub { color:var(--ink-2); margin:0 0 18px; max-width:720px; }
+  .card { background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:20px; box-shadow:var(--shadow); }
+  .grid3 { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px; }
+  .grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:14px; }
+  .tile .label { font-size:13px; color:var(--mute); }
+  .tile .value { font-size:28px; font-weight:700; letter-spacing:-.01em; font-variant-numeric:tabular-nums; margin:2px 0; }
+  .tile .note { font-size:13px; color:var(--ink-2); }
+  .step { position:relative; }
+  .step .n { width:28px; height:28px; border-radius:50%; background:var(--acc-soft); color:var(--acc); font-weight:700; display:flex; align-items:center; justify-content:center; font-size:14px; margin-bottom:10px; }
+  .step h3, .card h3 { margin:0 0 6px; font-size:17px; }
+  .step p, .card p { margin:0; color:var(--ink-2); font-size:15px; }
+  .example { margin-top:14px; background:var(--surface-2); border-radius:10px; padding:16px 18px; font-size:15px; }
+  .example b { font-variant-numeric:tabular-nums; }
+  .flow { display:grid; grid-template-columns:1fr auto 1fr; gap:10px; align-items:center; margin-top:6px; }
+  .party { background:var(--surface-2); border-radius:10px; padding:12px 14px; font-size:14px; }
+  .party b { display:block; font-size:15px; }
+  .arrow { color:var(--mute); font-size:13px; text-align:center; }
+  @media (max-width:640px) { .flow { grid-template-columns:1fr; } .arrow { transform:rotate(90deg); } }
+  /* chart */
+  .chart-wrap { position:relative; }
+  svg.chart { width:100%; height:260px; display:block; }
+  .tip { position:absolute; pointer-events:none; background:var(--ink); color:var(--bg); font-size:13px; padding:6px 9px; border-radius:6px; white-space:nowrap; opacity:0; transition:opacity .08s; font-variant-numeric:tabular-nums; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; font-size:13px; color:var(--ink-2); margin-top:8px; }
+  .legend span::before { content:""; display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:6px; vertical-align:-1px; background:var(--c); }
+  .legend .line::before { height:2px; width:14px; vertical-align:3px; border-radius:1px; }
+  /* tables */
+  .tbl { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; }
+  .tbl th { text-align:left; color:var(--mute); font-weight:600; font-size:12px; text-transform:uppercase; letter-spacing:.04em; padding:8px 10px 8px 0; border-bottom:1px solid var(--line); }
+  .tbl td { padding:10px 10px 10px 0; border-bottom:1px solid var(--line); vertical-align:middle; }
+  .scroll { overflow-x:auto; }
+  .pill { display:inline-block; font-size:12px; font-weight:600; padding:2px 8px; border-radius:999px; background:var(--surface-2); color:var(--ink-2); }
+  .pill.open { background:var(--acc-soft); color:var(--acc); }
+  .empty { text-align:center; padding:28px 10px; color:var(--ink-2); }
+  /* form */
+  .form { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:14px; }
+  label { font-size:13px; font-weight:600; color:var(--ink-2); display:block; margin-bottom:4px; }
+  .hint { font-size:12px; color:var(--mute); margin-top:3px; }
+  input, select { font:inherit; font-size:15px; padding:9px 11px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink); width:100%; }
+  input:focus, select:focus { outline:2px solid var(--acc-soft); border-color:var(--acc); }
+  .summary { margin-top:16px; background:var(--surface-2); border-radius:10px; padding:16px 18px; }
+  .summary p { margin:0 0 8px; color:var(--ink); }
+  .scen { width:100%; border-collapse:collapse; font-size:14px; font-variant-numeric:tabular-nums; margin-top:6px; }
+  .scen td { padding:5px 0; border-top:1px solid var(--line); } .scen td:last-child { text-align:right; font-weight:600; }
+  .row { display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-top:16px; }
+  .mono { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:13px; }
+  .warn { background:var(--warn-bg); border:1px solid var(--line); border-left:4px solid var(--warn-line); border-radius:10px; padding:14px 16px; font-size:14px; color:var(--ink-2); }
+  ul.clean { margin:0; padding-left:18px; color:var(--ink-2); font-size:15px; } ul.clean li { margin:4px 0; }
+  #log { white-space:pre-wrap; font-family:ui-monospace,Menlo,monospace; font-size:12px; color:var(--mute); max-height:140px; overflow:auto; margin:0; }
+  footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
+  .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
 </style>
 </head>
 <body>
-<main>
-  <h1>Funding Swap on Arc</h1>
-  <p class="sub">Peer-to-peer fixed-for-floating swaps on <b>Hyperliquid BTC-PERP funding</b>, settled in USDC on Arc mainnet.
-    Lock in a funding rate for a few days, or take the other side, without an intermediary.</p>
-
-  <div class="card warn">
-    <b>Experimental.</b> The contracts are not audited. Margin is capped at 100 USDC per side.
-    The funding index is posted by a single publisher, but it is append-only and anyone can recompute every value from Hyperliquid's public API (<a href="https://github.com/ara-stock/arc-funding-swap#index-rule">rule</a>).
-    If the publisher fails to post the maturity value within 7 days, both sides can reclaim their full margin.
+<nav>
+  <div class="wrap">
+    <a class="brand" href="#"><i></i>Funding Swap</a>
+    <div class="links"><a href="#how">How it works</a><a href="#market">Market</a><a href="#offers">Offers</a><a href="#trust">Transparency</a><a href="https://github.com/ara-stock/arc-funding-swap">GitHub</a></div>
+    <button id="connect" class="ghost">Connect wallet</button>
   </div>
+</nav>
 
-  <h2>BTC funding, daily (from the on-chain index)</h2>
-  <div class="card">
-    <svg id="chart" role="img" aria-label="Daily BTC funding rate"></svg>
-    <div class="row" style="justify-content:space-between"><span class="sub" id="chartNote">Loading…</span><span class="sub mono" id="addrs"></span></div>
-  </div>
-
-  <h2>Swaps</h2>
-  <div class="card wrap">
-    <table>
-      <thead><tr><th>#</th><th>Maker</th><th>Fixed</th><th>Notional</th><th>Margin</th><th>Term</th><th>Status</th><th></th></tr></thead>
-      <tbody id="swaps"><tr><td colspan="8" class="sub">Loading…</td></tr></tbody>
-    </table>
-  </div>
-
-  <h2>Create an offer</h2>
-  <div class="card">
-    <div class="grid">
-      <div><label>You</label><select id="fSide"><option value="1">pay fixed / receive floating</option><option value="0">receive fixed / pay floating</option></select></div>
-      <div><label>Fixed rate, % per day</label><input id="fRate" value="0.025" inputmode="decimal"></div>
-      <div><label>Notional (USDC)</label><input id="fNotional" value="1000" inputmode="decimal"></div>
-      <div><label>Margin per side (USDC, max 100)</label><input id="fMargin" value="10" inputmode="decimal"></div>
-      <div><label>Term (days, 1–30)</label><input id="fTenor" value="7" inputmode="numeric"></div>
-      <div><label>Offer valid for (hours)</label><input id="fExpiry" value="24" inputmode="numeric"></div>
+<header class="wrap">
+  <section>
+    <div class="kicker">Live on Arc mainnet · settled in USDC</div>
+    <h1>Lock in perp funding.<br>Or take the other side.</h1>
+    <p class="lead">Perpetual funding pays traders every hour, but the rate swings. Funding Swap lets two people trade a <b>fixed</b> funding rate for the <b>actual</b> one on Hyperliquid BTC‑PERP, with no intermediary. The contract holds both deposits and pays the winner automatically.</p>
+    <div class="row" style="margin:0 0 26px"><a class="btn" href="#create">Create an offer</a><a class="btn ghost" href="#how">How it works</a></div>
+    <div class="grid3">
+      <div class="card tile"><div class="label">Yesterday's BTC funding</div><div class="value" id="kLast">–</div><div class="note" id="kLastNote">per day</div></div>
+      <div class="card tile"><div class="label">7‑day average</div><div class="value" id="k7">–</div><div class="note" id="k7Note">annualised</div></div>
+      <div class="card tile"><div class="label">Recorded on‑chain since Arc launch</div><div class="value" id="kDays">–</div><div class="note">days of verifiable funding data</div></div>
     </div>
-    <p class="sub" id="fPreview"></p>
-    <div class="row"><button id="connect" class="secondary">Connect wallet</button><button id="create" disabled>Approve &amp; create offer</button><span class="sub mono" id="me"></span></div>
-  </div>
+  </section>
+</header>
 
-  <h2>Activity</h2>
-  <div class="card"><div id="log">Read-only until a wallet is connected.</div></div>
+<main class="wrap">
+  <section id="how">
+    <div class="kicker">How it works</div>
+    <h2>Three steps, one rule</h2>
+    <p class="sub">One side pays a fixed rate and receives the actual funding; the other side does the opposite. Over the term, whoever was right gets paid from the other's deposit.</p>
+    <div class="grid3">
+      <div class="card step"><div class="n">1</div><h3>Post an offer</h3><p>Pick a side, a fixed rate per day, a size (notional) and a term. Your deposit (margin) is locked in the contract.</p></div>
+      <div class="card step"><div class="n">2</div><h3>Someone takes it</h3><p>A counterparty locks the same deposit. The swap starts at the next UTC midnight and runs for whole days.</p></div>
+      <div class="card step"><div class="n">3</div><h3>Automatic settlement</h3><p>At maturity anyone can trigger settlement. The difference between actual and fixed funding moves to the winner, capped at the deposit.</p></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>Worked example</h3>
+      <div class="flow">
+        <div class="party"><b>Alice pays fixed</b>0.025% per day · deposits 10 USDC</div>
+        <div class="arrow">⇄ 7 days on 1,000 USDC</div>
+        <div class="party"><b>Bob receives fixed</b>pays actual funding · deposits 10 USDC</div>
+      </div>
+      <div class="example">BTC funding actually averages <b>0.035%/day</b>. Over 7 days the actual leg is 1,000 × 0.245% = <b>2.45 USDC</b> and the fixed leg is 1,000 × 0.175% = <b>1.75 USDC</b>. Alice receives the difference, <b>0.70 USDC</b>, from Bob's deposit. If funding had averaged 0.015%/day, Bob would receive 0.70 USDC instead.</div>
+    </div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="card"><h3>Basis traders: lock your yield</h3><p>Holding spot BTC and short the perp earns floating funding. Receive fixed to turn it into a predictable return for the next week.</p></div>
+      <div class="card"><h3>Funding views: express them directly</h3><p>Think funding will spike or collapse? Pay or receive fixed without taking any BTC price exposure.</p></div>
+    </div>
+  </section>
+
+  <section id="market">
+    <div class="kicker">Market</div>
+    <h2>Hyperliquid BTC‑PERP funding, read from the chain</h2>
+    <p class="sub">Each bar is one UTC day of funding, computed from the on‑chain index. Bars above zero mean longs paid shorts. Hover a bar for the exact value.</p>
+    <div class="card">
+      <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily BTC funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
+      <div class="legend"><span style="--c:var(--pos)">Longs paid shorts</span><span style="--c:var(--neg)">Shorts paid longs</span><span class="line" style="--c:var(--ink-2)">Average</span><span class="line" style="--c:var(--acc)">Your fixed rate</span></div>
+      <div class="row" style="justify-content:space-between;margin-top:10px"><span class="sub" style="margin:0;font-size:13px" id="chartNote">Loading on‑chain data…</span><button class="toggle" id="tblToggle">Show as table</button></div>
+      <div class="scroll" id="tblWrap" hidden><table class="tbl"><thead><tr><th>Day (UTC)</th><th>Funding / day</th><th>Annualised</th></tr></thead><tbody id="tbl"></tbody></table></div>
+    </div>
+  </section>
+
+  <section id="offers">
+    <div class="kicker">Offers</div>
+    <h2>Open and active swaps</h2>
+    <p class="sub">Take an open offer to become the counterparty. You need the same deposit in USDC on Arc.</p>
+    <div class="card scroll">
+      <table class="tbl">
+        <thead><tr><th>#</th><th>Maker</th><th>Maker position</th><th>Size</th><th>Deposit each</th><th>Term</th><th>Status</th><th></th></tr></thead>
+        <tbody id="swaps"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="create">
+    <div class="kicker">Create</div>
+    <h2>Post an offer</h2>
+    <p class="sub">Connect a wallet on Arc mainnet. Posting asks for two signatures: a USDC approval for your deposit, then the offer itself.</p>
+    <div class="card">
+      <div class="form">
+        <div><label for="fSide">Your position</label><select id="fSide"><option value="1">Pay fixed, receive actual funding</option><option value="0">Receive fixed, pay actual funding</option></select><div class="hint">Receive fixed = lock in a funding income.</div></div>
+        <div><label for="fRate">Fixed rate (% per day)</label><input id="fRate" value="0.025" inputmode="decimal"><div class="hint" id="fRateApr"></div></div>
+        <div><label for="fNotional">Size / notional (USDC)</label><input id="fNotional" value="1000" inputmode="decimal"><div class="hint">Funding is paid on this amount.</div></div>
+        <div><label for="fMargin">Deposit each side (USDC)</label><input id="fMargin" value="10" inputmode="decimal"><div class="hint">Max loss for either side. Capped at 100.</div></div>
+        <div><label for="fTenor">Term (days)</label><input id="fTenor" value="7" inputmode="numeric"><div class="hint">1–30 whole UTC days.</div></div>
+        <div><label for="fExpiry">Offer open for (hours)</label><input id="fExpiry" value="24" inputmode="numeric"><div class="hint">Cancel any time before it is taken.</div></div>
+      </div>
+      <div class="summary">
+        <p id="sumText"></p>
+        <table class="scen" id="scen"></table>
+      </div>
+      <div class="row"><button id="create-btn" disabled>Approve &amp; post offer</button><span class="sub mono" style="margin:0" id="me">Wallet not connected</span></div>
+    </div>
+  </section>
+
+  <section id="trust">
+    <div class="kicker">Transparency</div>
+    <h2>Rules you can check</h2>
+    <div class="grid2">
+      <div class="card">
+        <h3>Contracts (source-verified)</h3>
+        <ul class="clean">
+          <li>FundingIndexOracle · <a class="mono" id="aOracle" href="#"></a> · <a id="sOracle" href="#">Sourcify</a></li>
+          <li>FundingRateSwap · <a class="mono" id="aSwap" href="#"></a> · <a id="sSwap" href="#">Sourcify</a></li>
+          <li>No admin keys, no upgrades, no fees.</li>
+          <li>Code and tests: <a href="https://github.com/ara-stock/arc-funding-swap">github.com/ara-stock/arc-funding-swap</a></li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>The funding index</h3>
+        <ul class="clean">
+          <li>Every value is the sum of Hyperliquid's public hourly funding for that day. Anyone can recompute it (<a href="https://github.com/ara-stock/arc-funding-swap#index-rule">rule</a>).</li>
+          <li>Append-only: a day can be posted once, only after it ends, and never changed.</li>
+          <li>If a maturity value is not posted within 7 days, both sides can reclaim their full deposit.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="warn" style="margin-top:14px"><b>Experimental and unaudited.</b> Deposits are capped at 100 USDC per side and terms at 30 days. The index currently has a single publisher. Only use amounts you can afford to lose.</div>
+  </section>
+
+  <section>
+    <div class="card"><h3 style="margin-bottom:6px">Activity</h3><pre id="log">Read-only until a wallet is connected.</pre></div>
+  </section>
 </main>
+
+<footer class="wrap">Funding Swap on Arc · MIT · Not affiliated with Hyperliquid or Circle · <a href="https://github.com/ara-stock/arc-funding-swap">Source</a></footer>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.4/ethers.umd.min.js"></script>
 <script src="config.js"></script>
 <script>
 const { ethers } = window;
 const CFG = window.ARC_FUNDING_CONFIG;
-const ORACLE_ABI = [
-  "function range(bytes32) view returns (uint64,uint64,bool)",
-  "function indexAt(bytes32,uint64) view returns (int256)",
-];
+const ORACLE_ABI = ["function range(bytes32) view returns (uint64,uint64,bool)", "function indexAt(bytes32,uint64) view returns (int256)"];
 const SWAP_ABI = [
   "function swapCount() view returns (uint256)",
   "function getSwap(uint256) view returns (tuple(address maker,bool makerPaysFixed,bytes32 market,uint128 notional,uint128 margin,int256 fixedRatePerDay,uint64 tenorDays,uint64 offerExpiry,address taker,uint64 startDay,uint8 state))",
-  "function previewSettle(uint256) view returns (int256,int256,uint256,uint256)",
   "function createOffer(bytes32,bool,uint128,uint128,int256,uint64,uint64) returns (uint256)",
   "function cancelOffer(uint256)", "function takeOffer(uint256)", "function settle(uint256)", "function refundIfOracleFailed(uint256)",
 ];
@@ -97,58 +232,113 @@ const MARKET = ethers.encodeBytes32String(CFG.market);
 const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true });
 const oracleR = new ethers.Contract(CFG.oracle, ORACLE_ABI, read);
 const swapR = new ethers.Contract(CFG.swap, SWAP_ABI, read);
-let signer = null, me = null;
+let signer = null, me = null, daily = [];
 
 const $ = (id) => document.getElementById(id);
-const log = (msg) => { const el = $("log"); el.textContent = `${new Date().toISOString().slice(11,19)} ${msg}\n` + el.textContent; };
+const log = (m) => { $("log").textContent = `${new Date().toISOString().slice(11,19)}  ${m}\n` + $("log").textContent; };
 const usdc = (v) => Number(ethers.formatUnits(v, 6)).toLocaleString(undefined, { maximumFractionDigits: 2 });
-const pctDay = (v) => (Number(ethers.formatUnits(v, 18)) * 100).toFixed(4) + "%/d";
-const apr = (perDay) => (perDay * 365 * 100).toFixed(1) + "% APR";
+const pct = (r, d = 4) => (r * 100).toFixed(d) + "%";
+const aprOf = (perDay) => (perDay * 365 * 100).toFixed(1) + "%";
 const short = (a) => a.slice(0, 6) + "…" + a.slice(-4);
 const dayStr = (d) => new Date(Number(d) * 86400000).toISOString().slice(0, 10);
-const STATES = ["–", "Open", "Active", "Closed"];
+const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
-async function loadChart() {
+// ---------------------------------------------------------------- market data
+async function loadMarket() {
   const [first, last, started] = await oracleR.range(MARKET);
   if (!started) { $("chartNote").textContent = "No funding values posted yet."; return; }
   const days = []; for (let d = Number(first); d <= Number(last); d++) days.push(d);
   const idx = await Promise.all(days.map((d) => oracleR.indexAt(MARKET, d)));
-  const daily = [];
-  for (let i = 1; i < idx.length; i++) daily.push({ day: days[i], rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
-  const svg = $("chart"); const W = 900, H = 180, P = 24; svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
-  const max = Math.max(...daily.map((x) => Math.abs(x.rate)), 1e-6);
-  const y = (r) => H / 2 - (r / max) * (H / 2 - P);
-  const bw = (W - 2 * P) / Math.max(daily.length, 1);
-  svg.innerHTML = `<line x1="${P}" x2="${W - P}" y1="${H / 2}" y2="${H / 2}" stroke="currentColor" stroke-opacity=".2"/>` +
-    daily.map((x, i) => `<rect x="${P + i * bw + 1}" width="${Math.max(bw - 2, 1)}" y="${Math.min(y(x.rate), H / 2)}" height="${Math.abs(y(x.rate) - H / 2)}" fill="${x.rate >= 0 ? "var(--acc)" : "var(--bad)"}"><title>${dayStr(x.day)}: ${(x.rate * 100).toFixed(4)}%</title></rect>`).join("");
-  const avg = daily.reduce((s, x) => s + x.rate, 0) / Math.max(daily.length, 1);
-  $("chartNote").textContent = `${daily.length} days since ${dayStr(days[0])} · average ${(avg * 100).toFixed(4)}%/day (${apr(avg)}) · positive = longs pay shorts`;
+  daily = [];
+  for (let i = 1; i < idx.length; i++) daily.push({ day: days[i] - 1, rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
+  const lastD = daily[daily.length - 1];
+  const last7 = daily.slice(-7); const avg7 = last7.reduce((s, x) => s + x.rate, 0) / last7.length;
+  $("kLast").textContent = pct(lastD.rate, 4); $("kLastNote").textContent = `per day on ${dayStr(lastD.day)} · ${aprOf(lastD.rate)} annualised`;
+  $("k7").textContent = aprOf(avg7); $("k7Note").textContent = `annualised · ${pct(avg7, 4)} per day`;
+  $("kDays").textContent = String(daily.length);
+  const avg = daily.reduce((s, x) => s + x.rate, 0) / daily.length;
+  $("chartNote").textContent = `${daily.length} days since ${dayStr(daily[0].day)} · average ${pct(avg)} per day (${aprOf(avg)} annualised)`;
+  $("tbl").textContent = "";
+  for (const x of [...daily].reverse()) { const tr = $("tbl").insertRow(); [dayStr(x.day), pct(x.rate), aprOf(x.rate)].forEach((t) => (tr.insertCell().textContent = t)); }
+  drawChart(); updateSummary();
 }
 
+function drawChart() {
+  if (!daily.length) return;
+  const svg = $("chart"), W = svg.clientWidth || 900, H = 260, L = 56, R = 12, T = 14, B = 28;
+  svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const fixed = currentFixed();
+  const vals = daily.map((x) => x.rate).concat([0, fixed ?? 0]);
+  let max = Math.max(...vals), min = Math.min(...vals); const pad = (max - min || 1e-4) * 0.12; max += pad; min = Math.min(0, min - pad);
+  const y = (r) => T + (max - r) / (max - min) * (H - T - B);
+  const slot = (W - L - R) / daily.length, bw = Math.min(24, Math.max(2, slot - 2));
+  const ticks = 4, parts = [];
+  const grid = cssVar("--grid"), mute = cssVar("--mute");
+  for (let i = 0; i <= ticks; i++) {
+    const v = min + (max - min) * i / ticks, yy = y(v);
+    parts.push(`<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`);
+    parts.push(`<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="${mute}">${(v * 100).toFixed(3)}%</text>`);
+  }
+  parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="${mute}" stroke-width="1"/>`);
+  const r = 4;
+  daily.forEach((x, i) => {
+    const cx = L + i * slot + (slot - bw) / 2, y0 = y(0), y1 = y(x.rate), h = Math.abs(y1 - y0), top = Math.min(y0, y1);
+    const color = x.rate >= 0 ? "var(--pos)" : "var(--neg)";
+    const rr = Math.min(r, h, bw / 2);
+    // rounded data-end, square at the baseline
+    const d = x.rate >= 0
+      ? `M${cx},${y0} V${top + rr} Q${cx},${top} ${cx + rr},${top} H${cx + bw - rr} Q${cx + bw},${top} ${cx + bw},${top + rr} V${y0} Z`
+      : `M${cx},${y0} V${top + h - rr} Q${cx},${top + h} ${cx + rr},${top + h} H${cx + bw - rr} Q${cx + bw},${top + h} ${cx + bw},${top + h - rr} V${y0} Z`;
+    parts.push(`<path d="${d}" fill="${color}"/>`);
+    parts.push(`<rect x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" fill="transparent" data-i="${i}"/>`);
+  });
+  const avg = daily.reduce((s, x) => s + x.rate, 0) / daily.length;
+  parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
+  if (fixed !== null) parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
+  const step = Math.max(1, Math.ceil(daily.length / 6));
+  daily.forEach((x, i) => { if (i % step === 0 || i === daily.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${dayStr(x.day).slice(5)}</text>`); });
+  svg.innerHTML = parts.join("");
+  svg.querySelectorAll("rect[data-i]").forEach((el) => {
+    el.addEventListener("mousemove", (ev) => {
+      const x = daily[Number(el.dataset.i)], tip = $("tip"), box = svg.parentElement.getBoundingClientRect();
+      tip.textContent = `${dayStr(x.day)} · ${pct(x.rate)} / day · ${aprOf(x.rate)} ann.`;
+      tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
+    });
+    el.addEventListener("mouseleave", () => ($("tip").style.opacity = 0));
+  });
+}
+window.addEventListener("resize", drawChart);
+$("tblToggle").onclick = () => { const w = $("tblWrap"); w.hidden = !w.hidden; $("tblToggle").textContent = w.hidden ? "Show as table" : "Hide table"; };
+
+// ---------------------------------------------------------------- offers
 async function loadSwaps() {
   const n = Number(await swapR.swapCount());
   const body = $("swaps"); body.textContent = "";
-  if (n === 0) { const tr = body.insertRow(); const td = tr.insertCell(); td.colSpan = 8; td.className = "sub"; td.textContent = "No offers yet."; return; }
+  if (n === 0) {
+    const td = body.insertRow().insertCell(); td.colSpan = 8; td.className = "empty";
+    td.innerHTML = "No offers yet. <a href=\"#create\">Post the first one</a>."; return;
+  }
   const nowDay = Math.floor(Date.now() / 86400000);
   for (let id = n - 1; id >= 0; id--) {
-    const s = await swapR.getSwap(id);
+    const s = await swapR.getSwap(id), st = Number(s.state);
+    const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
     const tr = body.insertRow();
-    const cells = [
-      String(id), short(s.maker),
-      `${s.makerPaysFixed ? "maker pays" : "maker receives"} ${pctDay(s.fixedRatePerDay)}`,
-      usdc(s.notional), usdc(s.margin),
-      s.startDay > 0n ? `${dayStr(s.startDay)} → ${dayStr(s.startDay + s.tenorDays)}` : `${s.tenorDays} d`,
-      STATES[Number(s.state)],
-    ];
-    for (const c of cells) tr.insertCell().textContent = c;
+    tr.insertCell().textContent = String(id);
+    tr.insertCell().textContent = short(s.maker);
+    tr.insertCell().textContent = `${s.makerPaysFixed ? "Pays" : "Receives"} fixed ${pct(rate, 3)}/day (${aprOf(rate)})`;
+    tr.insertCell().textContent = usdc(s.notional) + " USDC";
+    tr.insertCell().textContent = usdc(s.margin) + " USDC";
+    tr.insertCell().textContent = s.startDay > 0n ? `${dayStr(s.startDay)} → ${dayStr(s.startDay + s.tenorDays)}` : `${s.tenorDays} days`;
+    const pill = document.createElement("span"); pill.className = "pill" + (st === 1 ? " open" : "");
+    pill.textContent = st === 1 ? (Date.now() / 1000 < Number(s.offerExpiry) ? "Open" : "Expired") : st === 2 ? "Active" : "Closed";
+    tr.insertCell().appendChild(pill);
     const act = tr.insertCell();
-    const btn = (label, fn) => { const b = document.createElement("button"); b.textContent = label; b.disabled = !signer; b.onclick = fn; act.appendChild(b); };
-    const state = Number(s.state);
-    if (state === 1 && me && me.toLowerCase() === s.maker.toLowerCase()) btn("Cancel", () => tx("cancel", (c) => c.cancelOffer(id)));
-    else if (state === 1 && Date.now() / 1000 < Number(s.offerExpiry)) btn("Take", () => take(id, s.margin));
-    if (state === 2 && nowDay >= Number(s.startDay + s.tenorDays)) {
+    const btn = (label, fn, ghost) => { const b = document.createElement("button"); b.textContent = label; if (ghost) b.className = "ghost"; b.disabled = !signer; b.onclick = fn; act.appendChild(b); };
+    if (st === 1 && me && me.toLowerCase() === s.maker.toLowerCase()) btn("Cancel", () => tx("cancel", (c) => c.cancelOffer(id)), true);
+    else if (st === 1 && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take (${s.makerPaysFixed ? "receive" : "pay"} fixed)`, () => take(id, s.margin));
+    if (st === 2 && nowDay >= Number(s.startDay + s.tenorDays)) {
       btn("Settle", () => tx("settle", (c) => c.settle(id)));
-      if (nowDay * 86400 >= (Number(s.startDay + s.tenorDays) * 86400) + 7 * 86400) btn("Refund", () => tx("refund", (c) => c.refundIfOracleFailed(id)));
+      if (nowDay >= Number(s.startDay + s.tenorDays) + 7) btn("Refund", () => tx("refund", (c) => c.refundIfOracleFailed(id)), true);
     }
   }
 }
@@ -159,60 +349,73 @@ async function ensureAllowance(amount) {
   log(`approving ${usdc(amount)} USDC…`);
   await (await token.approve(CFG.swap, amount)).wait();
 }
-
 async function tx(label, call) {
   try {
     const c = new ethers.Contract(CFG.swap, SWAP_ABI, signer);
-    log(`${label}: sending…`);
+    log(`${label}: waiting for wallet…`);
     const r = await (await call(c)).wait();
     log(`${label}: confirmed ${r.hash}`);
     await loadSwaps();
   } catch (e) { log(`${label} failed: ${e.shortMessage || e.message}`); }
 }
+async function take(id, margin) { try { await ensureAllowance(margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; } await tx(`take #${id}`, (c) => c.takeOffer(id)); }
 
-async function take(id, margin) { await ensureAllowance(margin); await tx(`take #${id}`, (c) => c.takeOffer(id)); }
-
+// ---------------------------------------------------------------- create form
+function currentFixed() { const v = Number($("fRate").value); return Number.isFinite(v) ? v / 100 : null; }
 function readForm() {
-  const rate = ethers.parseUnits((Number($("fRate").value) / 100).toFixed(18), 18);
-  const notional = ethers.parseUnits($("fNotional").value || "0", 6);
-  const margin = ethers.parseUnits($("fMargin").value || "0", 6);
-  const tenor = BigInt(parseInt($("fTenor").value || "0", 10));
-  const expiry = BigInt(Math.floor(Date.now() / 1000) + 3600 * parseInt($("fExpiry").value || "0", 10));
-  return { paysFixed: $("fSide").value === "1", rate, notional, margin, tenor, expiry };
+  return {
+    paysFixed: $("fSide").value === "1",
+    rate: ethers.parseUnits((Number($("fRate").value) / 100).toFixed(18), 18),
+    notional: ethers.parseUnits($("fNotional").value || "0", 6),
+    margin: ethers.parseUnits($("fMargin").value || "0", 6),
+    tenor: BigInt(parseInt($("fTenor").value || "0", 10)),
+    expiry: BigInt(Math.floor(Date.now() / 1000) + 3600 * parseInt($("fExpiry").value || "0", 10)),
+  };
 }
-function preview() {
-  try {
-    const f = readForm();
-    const perDay = Number(ethers.formatUnits(f.rate, 18));
-    const move = Number(ethers.formatUnits(f.notional, 6)) * perDay * Number(f.tenor);
-    $("fPreview").textContent = `Fixed ${apr(perDay)}. Over ${f.tenor} days the fixed leg is ${move.toFixed(2)} USDC; each 0.01%/day of difference moves ${(Number(ethers.formatUnits(f.notional, 6)) * 0.0001 * Number(f.tenor)).toFixed(2)} USDC (capped at the margin).`;
-  } catch { $("fPreview").textContent = ""; }
+function updateSummary() {
+  const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
+  const pays = $("fSide").value === "1";
+  if (!(f !== null && n > 0 && m > 0 && t > 0)) { $("sumText").textContent = ""; $("scen").textContent = ""; return; }
+  $("fRateApr").textContent = `= ${aprOf(f)} annualised`;
+  $("sumText").innerHTML = `You <b>${pays ? "pay" : "receive"} ${pct(f, 3)}/day fixed</b> and <b>${pays ? "receive" : "pay"} the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} days. Most either side can lose: <b>${m} USDC</b>.`;
+  const ref = daily.length ? daily.slice(-7).reduce((s, x) => s + x.rate, 0) / Math.min(7, daily.length) : f;
+  const rows = [["If funding averages 0.010%/day lower than fixed", f - 0.0001], ["If funding averages exactly the fixed rate", f], ["If funding averages 0.010%/day higher than fixed", f + 0.0001], [`If funding repeats the last 7 days (${pct(ref, 3)}/day)`, ref]];
+  $("scen").innerHTML = "";
+  for (const [label, actual] of rows) {
+    let pnl = n * (actual - f) * t * (pays ? 1 : -1); pnl = Math.max(-m, Math.min(m, pnl));
+    const tr = $("scen").insertRow(); tr.insertCell().textContent = label;
+    tr.insertCell().textContent = (pnl >= 0 ? "+" : "") + pnl.toFixed(2) + " USDC";
+  }
+  drawChart();
 }
-["fRate", "fNotional", "fTenor"].forEach((id) => $(id).addEventListener("input", preview));
+["fSide", "fRate", "fNotional", "fMargin", "fTenor"].forEach((id) => $(id).addEventListener("input", updateSummary));
 
+// ---------------------------------------------------------------- wallet
 $("connect").onclick = async () => {
-  if (!window.ethereum) { log("No browser wallet found."); return; }
+  if (!window.ethereum) { log("No browser wallet found. Install MetaMask or Rabby."); return; }
   try {
     await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{ chainId: "0x" + CFG.chainId.toString(16), chainName: "Arc", nativeCurrency: { name: "USDC", symbol: "USDC", decimals: 18 }, rpcUrls: [CFG.rpc], blockExplorerUrls: [CFG.explorer] }] });
     const bp = new ethers.BrowserProvider(window.ethereum);
     signer = await bp.getSigner(); me = await signer.getAddress();
-    const net = await bp.getNetwork();
-    if (Number(net.chainId) !== CFG.chainId) { log("Switch your wallet to Arc mainnet."); signer = null; return; }
-    $("me").textContent = short(me); $("create").disabled = false;
+    if (Number((await bp.getNetwork()).chainId) !== CFG.chainId) { log("Switch your wallet to Arc mainnet."); signer = null; return; }
+    $("me").textContent = `Connected ${short(me)}`; $("connect").textContent = short(me); $("create-btn").disabled = false;
     log(`connected ${me}`); await loadSwaps();
   } catch (e) { log(`connect failed: ${e.shortMessage || e.message}`); }
 };
-
-$("create").onclick = async () => {
+$("create-btn").onclick = async () => {
   const f = readForm();
   try { await ensureAllowance(f.margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; }
-  await tx("create offer", (c) => c.createOffer(MARKET, f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
+  await tx("post offer", (c) => c.createOffer(MARKET, f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
 };
 
-$("addrs").textContent = `oracle ${short(CFG.oracle)} · swap ${short(CFG.swap)}`;
-preview();
-if (CFG.oracle.startsWith("0x000000")) { $("chartNote").textContent = "Not deployed yet."; $("swaps").textContent = ""; }
-else { loadChart().catch((e) => $("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`); loadSwaps().catch((e) => log(e.message)); }
+// ---------------------------------------------------------------- boot
+for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
+  $("a" + id).textContent = short(addr); $("a" + id).href = `${CFG.explorer}/address/${addr}`;
+  $("s" + id).href = `https://repo.sourcify.dev/contracts/full_match/${CFG.chainId}/${addr}/`;
+}
+updateSummary();
+loadMarket().catch((e) => ($("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`));
+loadSwaps().catch((e) => log(e.message));
 </script>
 </body>
 </html>
