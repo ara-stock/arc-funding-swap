@@ -4,3 +4,4 @@ broadcast/
 .env
 *.key
 publisher/state/
+publisher/*.log
