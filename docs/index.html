@@ -134,6 +134,9 @@
   .goals { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
   .goalgrp { grid-column:1/-1; font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--mute); margin-top:4px; }
   @media (max-width:560px) { .goals { grid-template-columns:1fr; } }
+  .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px; }
+  .tiers .choice { text-align:center; padding:12px 10px; }
+  @media (max-width:560px) { .tiers { grid-template-columns:1fr; } }
   .chips.big .chip { padding:9px 16px; font-size:14px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
@@ -230,12 +233,19 @@
       <div class="q"><div class="qn">2</div><div>
         <div class="qtitle">At what rate?</div>
         <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span>BTC funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
+        <div class="tiers" id="tiers">
+          <button class="choice" data-tier="easy" aria-pressed="false"><b>⚡ Fill fast</b><span id="tEasy">–</span></button>
+          <button class="choice" data-tier="fair" aria-pressed="true"><b>⚖️ Fair</b><span id="tFair">–</span></button>
+          <button class="choice" data-tier="better" aria-pressed="false"><b>🎯 Better for me</b><span id="tBetter">–</span></button>
+        </div>
         <div class="slider">
           <div class="sliderhead"><span id="rateQ">Your fixed rate</span><b id="aprBig">9.0% APR</b></div>
-          <div class="hint" id="goalLine" style="margin:0 0 8px;font-size:14px;color:var(--ink)"></div>
-          <div class="chips" id="rateChips"></div>
-          <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
-          <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
+          <div class="hint" id="goalLine" style="margin:0;font-size:14px;color:var(--ink)"></div>
+          <details id="customRate"><summary>Choose an exact rate</summary>
+            <div class="chips" id="rateChips"></div>
+            <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
+            <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
+          </details>
           <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
         </div>
         <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="h48" aria-pressed="true">Last 48 hours (hourly)</button><button class="chip" data-range="d" aria-pressed="false">Since Arc launch (daily)</button></div>
@@ -245,8 +255,8 @@
       <div class="q"><div class="qn">3</div><div>
         <div class="inrow">
           <div><div class="qtitle">How big?</div>
-            <div class="chips big" data-for="fNotional"><button class="chip" data-v="100">$100</button><button class="chip" data-v="500">$500</button><button class="chip" data-v="1000">$1,000</button><button class="chip" data-v="2500">$2,500</button></div>
-            <div class="hint">Funding is calculated on this amount. You don't need to hold it.</div></div>
+            <div class="chips big" data-for="fNotional"><button class="chip" data-v="1000">$1k</button><button class="chip" data-v="10000">$10k</button><button class="chip" data-v="50000">$50k</button><button class="chip" data-v="100000">$100k</button></div>
+            <div class="hint">Funding is calculated on this amount. You only lock the deposit below (max 100 USDC).</div></div>
           <div><div class="qtitle">For how long?</div>
             <div class="chips big" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
             <div class="hint">Starts at the next UTC midnight.</div></div>
@@ -258,7 +268,7 @@
         </div>
         <details><summary>Custom amounts</summary>
           <div class="inrow" style="margin-top:10px">
-            <div><label for="fNotional">Size</label><div class="unit"><input id="fNotional" value="1000" inputmode="decimal"><i>USDC</i></div></div>
+            <div><label for="fNotional">Size</label><div class="unit"><input id="fNotional" value="10000" inputmode="decimal"><i>USDC</i></div></div>
             <div><label for="fTenor">Term</label><div class="unit"><input id="fTenor" value="7" inputmode="numeric"><i>days</i></div></div>
             <div><label for="fMargin">Deposit</label><div class="unit"><input id="fMargin" value="3" inputmode="decimal"><i>USDC</i></div></div>
             <div><label for="fExpiry">Offer open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
@@ -506,7 +516,7 @@ async function take(id, s) {
 }
 
 // ---------------------------------------------------------------- create form
-let side = "0", goal = "lock", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
+let side = "0", goal = "lock", tier = "fair", aprEdited = false, marginEdited = false, usdcBal = null, allowance = null;
 const aprToDay = (apr) => apr / 100 / 365;
 function currentFixed() { const v = Number($("fApr").value); return Number.isFinite(v) ? aprToDay(v) : null; }
 function readForm() {
@@ -539,16 +549,27 @@ function renderRateChips() {
     box.appendChild(b);
   }
   for (const d of [-2, 2]) { const b = document.createElement("button"); b.className = "chip"; b.textContent = `${d > 0 ? "+" : "−"}2%`; b.onclick = () => setApr(Number($("fApr").value) + d); box.appendChild(b); }
-  const ref = hourly.length ? hourly[hourly.length - 1].rate : a;
-  if (!aprEdited && ref !== null) setApr(Math.round(ref * 365 * 100 * 2) / 2, true);
+  applyTier();
 }
+const TIER_STEP = 2; // % APR away from the fair rate
+function fairApr() { const a = avg7(); const r = a ?? (hourly.length ? hourly[hourly.length - 1].rate : null); return r === null ? null : r * 365 * 100; }
+// "easy" concedes TIER_STEP to the taker: a fixed receiver asks less, a fixed payer offers more
+function tierApr(t) { const f = fairApr(); if (f === null) return null; const sgn = side === "1" ? 1 : -1; return Math.round((f + (t === "easy" ? sgn : t === "better" ? -sgn : 0) * TIER_STEP) * 2) / 2; }
+function applyTier() { if (aprEdited) return; const v = tierApr(tier); if (v !== null) setApr(v, true); }
 function setApr(v, auto) { v = Math.max(-10, Math.min(40, v)); $("fApr").value = v.toFixed(1); if (!auto) aprEdited = true; updateSummary(); }
 function syncChips() {
   document.querySelectorAll(".chips[data-for]").forEach((box) => {
     const v = $(box.dataset.for).value;
     box.querySelectorAll(".chip").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.v === v)));
   });
-  document.querySelectorAll(".choice").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.goal === goal)));
+  document.querySelectorAll(".choice[data-goal]").forEach((c) => c.setAttribute("aria-pressed", String(c.dataset.goal === goal)));
+  document.querySelectorAll(".choice[data-tier]").forEach((c) => c.setAttribute("aria-pressed", String(!aprEdited && c.dataset.tier === tier)));
+  if (fairApr() !== null) {
+    const rec = side === "1" ? "pay" : "receive";
+    $("tEasy").textContent = `${rec} ${tierApr("easy").toFixed(1)}% · gives the other side a little extra, so it gets taken sooner`;
+    $("tFair").textContent = `${rec} ${tierApr("fair").toFixed(1)}% · the last 7 days' average`;
+    $("tBetter").textContent = `${rec} ${tierApr("better").toFixed(1)}% · better terms for you, may wait longer`;
+  }
 }
 function updateSummary() {
   const sm = suggestedMargin();
@@ -638,7 +659,8 @@ function drawPayoff() {
   $("phit").addEventListener("mouseleave", () => ($("ptip").style.opacity = 0));
 }
 window.addEventListener("resize", () => drawPayoff());
-document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { goal = c.dataset.goal; side = c.dataset.side; updateSummary(); }));
+document.querySelectorAll(".choice[data-goal]").forEach((c) => (c.onclick = () => { goal = c.dataset.goal; side = c.dataset.side; applyTier(); updateSummary(); }));
+document.querySelectorAll(".choice[data-tier]").forEach((c) => (c.onclick = () => { tier = c.dataset.tier; aprEdited = false; applyTier(); updateSummary(); }));
 document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
 $("aprRange").addEventListener("input", (e) => setApr(Number(e.target.value)));
 $("marginRange").addEventListener("input", (e) => { $("fMargin").value = e.target.value; marginEdited = true; updateSummary(); });
