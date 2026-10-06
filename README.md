@@ -1,7 +1,16 @@
 # Funding Swap on Arc
 
 Peer-to-peer **fixed-for-floating swaps on a perpetual market's funding rate**, settled in USDC on
-[Arc](https://arc.io) mainnet. The first market is **Hyperliquid BTC-PERP**.
+[Arc](https://arc.io) mainnet. Markets are Hyperliquid perps:
+
+| Market label (bytes32) | Hyperliquid coin | First day on chain | Daily funding s.d. (60d, % APR) |
+|---|---|---|---|
+| `HL:BTC` | BTC | 2026-09-16 | 3.9 |
+| `HL:HYPE` | HYPE | 2026-09-16 | 7.1 |
+| `HL:SOL` | SOL | 2026-09-16 | 4.4 |
+| `HL:DOGE` | DOGE | 2026-09-16 | 10.8 |
+
+BTC funding sits at Hyperliquid's 0.00125%/h baseline most hours, so it is the steady reference; HYPE, SOL and DOGE move enough for a swap to matter. The contracts take any bytes32 market; the app lists only markets the oracle has kept up to date.
 
 Perp funding is the largest recurring cash flow in crypto derivatives, and it is volatile. A basis
 trader holding spot BTC and short BTC-PERP earns floating funding. With this contract they can lock

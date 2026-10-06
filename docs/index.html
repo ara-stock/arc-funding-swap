@@ -137,6 +137,7 @@
   .tiers { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-top:4px; }
   .tiers .choice { text-align:center; padding:12px 10px; }
   @media (max-width:560px) { .tiers { grid-template-columns:1fr; } }
+  .chip small { display:block; font-size:11px; font-weight:400; color:var(--mute); }
   .chips.big .chip { padding:9px 16px; font-size:14px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
@@ -158,7 +159,7 @@
     <p class="lead">Perpetual funding pays traders every hour, but the rate swings. Funding Swap lets two people trade a <b>fixed</b> funding rate for the <b>actual</b> one on Hyperliquid BTC‑PERP, with no intermediary. The contract holds both deposits and pays the winner automatically.</p>
     <div class="row" style="margin:0 0 26px"><a class="btn" href="#create">Create an offer</a><a class="btn ghost" href="#how">How it works</a></div>
     <div class="grid3">
-      <div class="card tile"><div class="label">Yesterday's BTC funding</div><div class="value" id="kLast">–</div><div class="note" id="kLastNote">per day</div></div>
+      <div class="card tile"><div class="label">Yesterday's <span class="mname">BTC</span> funding</div><div class="value" id="kLast">–</div><div class="note" id="kLastNote">per day</div></div>
       <div class="card tile"><div class="label">7‑day average</div><div class="value" id="k7">–</div><div class="note" id="k7Note">annualised</div></div>
       <div class="card tile"><div class="label">Recorded on‑chain since Arc launch</div><div class="value" id="kDays">–</div><div class="note">days of verifiable funding data</div></div>
     </div>
@@ -192,7 +193,8 @@
 
   <section id="market">
     <div class="kicker">Market</div>
-    <h2>Hyperliquid BTC‑PERP funding, read from the chain</h2>
+    <h2>Hyperliquid <span class="mname">BTC</span>‑PERP funding, read from the chain</h2>
+    <div class="chips big" id="mktChips2" style="margin-bottom:12px"></div>
     <p class="sub">Each bar is one UTC day of funding, computed from the on‑chain index. Bars above zero mean longs paid shorts. Hover a bar for the exact value.</p>
     <div class="card">
       <div class="chart-wrap"><svg class="chart" id="chart" role="img" aria-label="Daily BTC funding rate, percent per day"></svg><div class="tip" id="tip"></div></div>
@@ -208,8 +210,8 @@
     <p class="sub">Take an open offer to become the counterparty. You need the same deposit in USDC on Arc.</p>
     <div class="card scroll">
       <table class="tbl">
-        <thead><tr><th>#</th><th>Maker</th><th>Maker position</th><th>Size</th><th>Deposit each</th><th>Term</th><th>Status</th><th></th></tr></thead>
-        <tbody id="swaps"><tr><td colspan="8" class="empty">Loading…</td></tr></tbody>
+        <thead><tr><th>#</th><th>Market</th><th>Maker</th><th>Maker position</th><th>Size</th><th>Deposit each</th><th>Term</th><th>Status</th><th></th></tr></thead>
+        <tbody id="swaps"><tr><td colspan="9" class="empty">Loading…</td></tr></tbody>
       </table>
     </div>
   </section>
@@ -226,13 +228,15 @@
           <button class="choice" data-goal="lock" data-side="0" aria-pressed="true"><b>🔒 Lock in my funding income</b><span>You are short the perp and earn funding. Swap it for a fixed rate, so a drop in funding can't hurt you.</span></button>
           <button class="choice" data-goal="cap" data-side="1" aria-pressed="false"><b>🛡️ Cap my funding cost</b><span>You are long the perp and pay funding. Pay a fixed rate instead, so a spike can't hurt you.</span></button>
           <div class="goalgrp">Take a view</div>
-          <button class="choice" data-goal="up" data-side="1" aria-pressed="false"><b>📈 Funding will go up</b><span>You win if BTC funding averages above the rate in step 2.</span></button>
-          <button class="choice" data-goal="down" data-side="0" aria-pressed="false"><b>📉 Funding will go down</b><span>You win if BTC funding averages below the rate in step 2.</span></button>
+          <button class="choice" data-goal="up" data-side="1" aria-pressed="false"><b>📈 Funding will go up</b><span>You win if <span class="mname">BTC</span> funding averages above the rate in step 2.</span></button>
+          <button class="choice" data-goal="down" data-side="0" aria-pressed="false"><b>📉 Funding will go down</b><span>You win if <span class="mname">BTC</span> funding averages below the rate in step 2.</span></button>
+          <div class="goalgrp">Which market?</div>
+          <div class="chips big" id="mktChips" style="grid-column:1/-1;margin:0"></div>
         </div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
         <div class="qtitle">At what rate?</div>
-        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span>BTC funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
+        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span><span class="mname">BTC</span> funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
         <div class="tiers" id="tiers">
           <button class="choice" data-tier="easy" aria-pressed="false"><b>⚡ Fill fast</b><span id="tEasy">–</span></button>
           <button class="choice" data-tier="fair" aria-pressed="true"><b>⚖️ Fair</b><span id="tFair">–</span></button>
@@ -330,7 +334,10 @@ const SWAP_ABI = [
   "function cancelOffer(uint256)", "function takeOffer(uint256)", "function settle(uint256)", "function refundIfOracleFailed(uint256)",
 ];
 const ERC20_ABI = ["function approve(address,uint256) returns (bool)", "function allowance(address,address) view returns (uint256)", "function balanceOf(address) view returns (uint256)"];
-const MARKET = ethers.encodeBytes32String(CFG.market);
+const MARKETS = CFG.markets || [{ label: CFG.market, coin: "BTC", name: "BTC", sdApr: 3.9 }];
+let mkt = MARKETS.find((m) => m.label === CFG.defaultMarket) || MARKETS[0], liveMarkets = [];
+const mkey = (m) => ethers.encodeBytes32String(m.label);
+const marketOf = (b32) => { try { const l = ethers.decodeBytes32String(b32); return MARKETS.find((m) => m.label === l) || { label: l, name: l, unknown: true }; } catch { return { label: b32.slice(0, 10) + "…", name: b32.slice(0, 10) + "…", unknown: true }; } };
 // The public RPC rate-limits bursts, so never batch: one request at a time, and Multicall3 for lists.
 const read = new ethers.JsonRpcProvider(CFG.rpc, CFG.chainId, { staticNetwork: true, batchMaxCount: 1 });
 const MULTICALL = new ethers.Contract("0xcA11bde05977b3631167028862bE2a173976CA11",
@@ -354,13 +361,22 @@ const dayStr = (d) => new Date(Number(d) * 86400000).toISOString().slice(0, 10);
 const cssVar = (n) => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
 
 // ---------------------------------------------------------------- market data
+const dailyCache = {};
 async function loadMarket() {
-  const [first, last, started] = await oracleR.range(MARKET);
+  const m = mkt;
+  daily = [];
+  if (dailyCache[m.label]) { daily = dailyCache[m.label]; return showMarket(); }
+  const [first, last, started] = await oracleR.range(mkey(m));
   if (!started) { $("chartNote").textContent = "No funding values posted yet."; return; }
   const days = []; for (let d = Number(first); d <= Number(last); d++) days.push(d);
-  const idx = await multicall(oracleR, "indexAt", days.map((d) => [MARKET, d]));
-  daily = [];
-  for (let i = 1; i < idx.length; i++) daily.push({ day: days[i] - 1, rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
+  const idx = await multicall(oracleR, "indexAt", days.map((d) => [mkey(m), d]));
+  const series = [];
+  for (let i = 1; i < idx.length; i++) series.push({ day: days[i] - 1, rate: Number(ethers.formatUnits(idx[i] - idx[i - 1], 18)) });
+  dailyCache[m.label] = series;
+  if (m !== mkt) return; // the user switched market while this was loading
+  daily = series; showMarket();
+}
+function showMarket() {
   const lastD = daily[daily.length - 1];
   const last7 = daily.slice(-7); const avg7 = last7.reduce((s, x) => s + x.rate, 0) / last7.length;
   $("kLast").textContent = pct(lastD.rate, 4); $("kLastNote").textContent = `per day on ${dayStr(lastD.day)} · ${aprOf(lastD.rate)} annualised`;
@@ -377,7 +393,7 @@ let hourly = [], tRange = "d";
 const dailySeries = () => daily.map((x) => ({ label: dayStr(x.day) + " (UTC day)", short: dayStr(x.day).slice(5), rate: x.rate }));
 function drawChart() {
   drawHistory("chart", "tip", 260, dailySeries(), false);
-  const ts = tRange === "h48" && hourly.length ? hourly : dailySeries();
+  const ts = (tRange === "h48" || !daily.length) && hourly.length ? hourly : dailySeries();
   drawHistory("tchart", "ttip", 220, ts, true);
 }
 // series: [{label, short, rate}] with rate expressed per day; ticket mode speaks APR and colours by win/lose
@@ -444,13 +460,48 @@ function drawHistory(svgId, tipId, H, series, ticket) {
 }
 // live hourly funding straight from Hyperliquid's public API (read-only)
 async function loadLive() {
-  const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "fundingHistory", coin: "BTC", startTime: Date.now() - 48 * 3600e3 }) });
+  const m = mkt;
+  const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "fundingHistory", coin: m.coin, startTime: Date.now() - 48 * 3600e3 }) });
   const rows = await r.json();
+  if (m !== mkt) return;
   hourly = rows.map((x) => { const d = new Date(Math.round(x.time / 3600e3) * 3600e3); return { label: d.toISOString().slice(5, 13).replace("T", " ") + ":00 UTC", short: d.toISOString().slice(11, 13) + ":00", rate: Number(x.fundingRate) * 24 }; });
   if (!hourly.length) return;
   const now = hourly[hourly.length - 1].rate, h24 = hourly.slice(-24).reduce((a, x) => a + x.rate, 0) / Math.min(24, hourly.length);
   $("liveNow").textContent = aprOf(now) + " APR"; $("live24").textContent = aprOf(h24);
   renderRateChips(); drawChart();
+}
+// show only markets the oracle has kept up to date (last value at most 2 days old)
+async function discoverMarkets() {
+  const today = Math.floor(Date.now() / 86400000);
+  liveMarkets = [];
+  for (const m of MARKETS) {
+    const [, last, started] = await oracleR.range(mkey(m)).catch(() => [0n, 0n, false]);
+    if (started && today - Number(last) <= 2) liveMarkets.push(m);
+  }
+  if (!liveMarkets.includes(mkt) && liveMarkets.length) mkt = liveMarkets[0];
+  renderMarketChips();
+}
+function moveTag(m) { return m.sdApr >= 6 ? "moves a lot" : m.sdApr <= 4 ? "steady" : "moves some"; }
+function renderMarketChips() {
+  for (const id of ["mktChips", "mktChips2"]) {
+    const box = $(id); box.textContent = "";
+    box.hidden = liveMarkets.length < 2;
+    for (const m of liveMarkets) {
+      const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", String(m === mkt));
+      b.innerHTML = `${m.name}<small>${moveTag(m)}</small>`;
+      b.onclick = () => selectMarket(m);
+      box.appendChild(b);
+    }
+  }
+  document.querySelectorAll(".mname").forEach((e) => (e.textContent = mkt.name));
+}
+function selectMarket(m) {
+  if (m === mkt) return;
+  mkt = m; hourly = []; aprEdited = false; marginEdited = false;
+  ["liveNow", "live24", "live7"].forEach((id) => ($(id).textContent = "–"));
+  renderMarketChips();
+  loadLive().catch((e) => log(`live funding unavailable: ${e.message}`));
+  loadMarket().catch((e) => ($("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`));
 }
 window.addEventListener("resize", drawChart);
 $("tblToggle").onclick = () => { const w = $("tblWrap"); w.hidden = !w.hidden; $("tblToggle").textContent = w.hidden ? "Show as table" : "Hide table"; };
@@ -460,7 +511,7 @@ async function loadSwaps() {
   const n = Number(await swapR.swapCount());
   const body = $("swaps"); body.textContent = "";
   if (n === 0) {
-    const td = body.insertRow().insertCell(); td.colSpan = 8; td.className = "empty";
+    const td = body.insertRow().insertCell(); td.colSpan = 9; td.className = "empty";
     td.innerHTML = "No offers yet. <a href=\"#create\">Post the first one</a>."; return;
   }
   const nowDay = Math.floor(Date.now() / 86400000);
@@ -470,7 +521,9 @@ async function loadSwaps() {
     const s = all[k], st = Number(s.state);
     const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
     const tr = body.insertRow();
+    const sm = marketOf(s.market), smOk = !sm.unknown && liveMarkets.some((m) => m.label === sm.label);
     tr.insertCell().textContent = String(id);
+    tr.insertCell().textContent = sm.name + (smOk ? "" : " ⚠");
     tr.insertCell().textContent = short(s.maker);
     tr.insertCell().textContent = `${s.makerPaysFixed ? "Pays" : "Receives"} fixed ${pct(rate, 3)}/day (${aprOf(rate)})`;
     tr.insertCell().textContent = usdc(s.notional) + " USDC";
@@ -482,7 +535,7 @@ async function loadSwaps() {
     const act = tr.insertCell();
     const btn = (label, fn, ghost) => { const b = document.createElement("button"); b.textContent = label; if (ghost) b.className = "ghost"; b.disabled = !signer; b.onclick = fn; act.appendChild(b); };
     if (st === 1 && me && me.toLowerCase() === s.maker.toLowerCase()) btn("Cancel", () => tx("cancel", (c) => c.cancelOffer(id)), true);
-    else if (st === 1 && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take: ${s.makerPaysFixed ? "receive" : "pay"} fixed`, () => take(id, s));
+    else if (st === 1 && smOk && Date.now() / 1000 < Number(s.offerExpiry)) btn(`Take: ${s.makerPaysFixed ? "receive" : "pay"} fixed`, () => take(id, s));
     if (st === 2 && nowDay >= Number(s.startDay + s.tenorDays)) {
       btn("Settle", () => tx("settle", (c) => c.settle(id)));
       if (nowDay >= Number(s.startDay + s.tenorDays) + 7) btn("Refund", () => tx("refund", (c) => c.refundIfOracleFailed(id)), true);
@@ -508,7 +561,8 @@ async function tx(label, call) {
 async function take(id, s) {
   const rate = Number(ethers.formatUnits(s.fixedRatePerDay, 18));
   const youPay = s.makerPaysFixed; // the taker is on the other side
-  const msg = `Take offer #${id}?\n\nYou will ${youPay ? "PAY the actual BTC funding and RECEIVE" : "PAY"} a fixed ${aprOf(rate)} APR${youPay ? "" : " and RECEIVE the actual BTC funding"} on ${usdc(s.notional)} USDC for ${s.tenorDays} day(s), starting at the next UTC midnight.\n\nDeposit: ${usdc(s.margin)} USDC. This is the most you can lose.\nYour wallet will ask to approve the deposit (if needed) and then to take the offer.`;
+  const nm = marketOf(s.market).name;
+  const msg = `Take offer #${id} (${nm})?\n\nYou will ${youPay ? "PAY the actual ${nm} funding and RECEIVE" : "PAY"} a fixed ${aprOf(rate)} APR${youPay ? "" : ` and RECEIVE the actual ${nm} funding`} on ${usdc(s.notional)} USDC for ${s.tenorDays} day(s), starting at the next UTC midnight.\n\nDeposit: ${usdc(s.margin)} USDC. This is the most you can lose.\nYour wallet will ask to approve the deposit (if needed) and then to take the offer.`;
   if (!window.confirm(msg)) return;
   try { await ensureAllowance(s.margin); } catch (e) { log(`approve failed: ${e.shortMessage || e.message}`); return; }
   await tx(`take #${id}`, (c) => c.takeOffer(id));
@@ -530,10 +584,10 @@ function readForm() {
   };
 }
 function suggestedMargin() {
-  // enough to cover funding missing the fixed rate by 0.03%/day (~11% APR) over the term
+  // enough to cover funding missing the fixed rate by one typical daily swing (sdApr) over the term
   const n = Number($("fNotional").value), t = parseInt($("fTenor").value, 10);
   if (!(n > 0 && t > 0)) return null;
-  return Math.min(100, Math.max(1, Math.ceil(n * 0.0003 * t)));
+  return Math.min(100, Math.max(1, Math.ceil(n * mkt.sdApr / 36500 * t)));
 }
 function avg7() { return daily.length ? daily.slice(-7).reduce((a, x) => a + x.rate, 0) / Math.min(7, daily.length) : null; }
 function renderRateChips() {
@@ -551,10 +605,10 @@ function renderRateChips() {
   for (const d of [-2, 2]) { const b = document.createElement("button"); b.className = "chip"; b.textContent = `${d > 0 ? "+" : "−"}2%`; b.onclick = () => setApr(Number($("fApr").value) + d); box.appendChild(b); }
   applyTier();
 }
-const TIER_STEP = 2; // % APR away from the fair rate
+const tierStep = () => Math.max(1, Math.round(mkt.sdApr) / 2); // % APR away from the fair rate: half a typical daily swing
 function fairApr() { const a = avg7(); const r = a ?? (hourly.length ? hourly[hourly.length - 1].rate : null); return r === null ? null : r * 365 * 100; }
 // "easy" concedes TIER_STEP to the taker: a fixed receiver asks less, a fixed payer offers more
-function tierApr(t) { const f = fairApr(); if (f === null) return null; const sgn = side === "1" ? 1 : -1; return Math.round((f + (t === "easy" ? sgn : t === "better" ? -sgn : 0) * TIER_STEP) * 2) / 2; }
+function tierApr(t) { const f = fairApr(); if (f === null) return null; const sgn = side === "1" ? 1 : -1; return Math.round((f + (t === "easy" ? sgn : t === "better" ? -sgn : 0) * tierStep()) * 2) / 2; }
 function applyTier() { if (aprEdited) return; const v = tierApr(tier); if (v !== null) setApr(v, true); }
 function setApr(v, auto) { v = Math.max(-10, Math.min(40, v)); $("fApr").value = v.toFixed(1); if (!auto) aprEdited = true; updateSummary(); }
 function syncChips() {
@@ -579,8 +633,8 @@ function updateSummary() {
     $("goalLine").innerHTML = {
       lock: `You get <b>${r}% APR</b> no matter what funding does. If funding ends up higher, you give up the extra.`,
       cap: `You pay <b>${r}% APR</b> no matter what funding does. If funding ends up lower, you pay more than you would have.`,
-      up: `You win if BTC funding averages <b>above ${r}% APR</b> over the term.`,
-      down: `You win if BTC funding averages <b>below ${r}% APR</b> over the term.`,
+      up: `You win if ${mkt.name} funding averages <b>above ${r}% APR</b> over the term.`,
+      down: `You win if ${mkt.name} funding averages <b>below ${r}% APR</b> over the term.`,
     }[goal]; }
   $("aprRange").value = $("fApr").value; $("aprBig").textContent = `${Number($("fApr").value).toFixed(1)}% APR`;
   $("marginRange").value = $("fMargin").value; $("marginBig").textContent = `${Number($("fMargin").value)} USDC`;
@@ -591,10 +645,11 @@ function updateSummary() {
   if (!(f !== null && n > 0 && m > 0 && t > 0)) { $("sumText").textContent = ""; $("scen").textContent = ""; refreshAction(); return; }
   $("fRateDay").textContent = `= ${pct(f, 4)} per day`;
   $("sumText").innerHTML = pays
-    ? `You <b>pay ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>receive the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages above your rate. Most you can lose: <b>${m} USDC</b>.`
-    : `You <b>receive ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>pay the actual BTC funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages below your rate. Most you can lose: <b>${m} USDC</b>.`;
+    ? `You <b>pay ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>receive the actual ${mkt.name} funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages above your rate. Most you can lose: <b>${m} USDC</b>.`
+    : `You <b>receive ${Number($("fApr").value).toFixed(1)}% APR fixed</b> and <b>pay the actual ${mkt.name} funding</b> on ${n.toLocaleString()} USDC for ${t} day${t > 1 ? "s" : ""}. You profit if funding averages below your rate. Most you can lose: <b>${m} USDC</b>.`;
   const ref = avg7() ?? f;
   const rows = [[`If funding averages ${(f * 365 * 100 - 3.65).toFixed(1)}% APR (lower)`, f - 0.0001], ["If funding equals your fixed rate", f], [`If funding averages ${(f * 365 * 100 + 3.65).toFixed(1)}% APR (higher)`, f + 0.0001], [`If the last 7 days repeat (${aprOf(ref)} APR)`, ref]];
+  $("sumText").innerHTML += ` Every 1% APR that funding misses your rate moves <b>±${(n * 0.01 / 365 * t).toFixed(2)} USDC</b>; the deposit is used up at a miss of ${(m / (n * t) * 36500).toFixed(1)}% APR.`;
   $("scen").innerHTML = "";
   for (const [label, actual] of rows) {
     let pnl = n * (actual - f) * t * (pays ? 1 : -1); pnl = Math.max(-m, Math.min(m, pnl));
@@ -647,7 +702,7 @@ function drawPayoff() {
   }
   // x axis labels
   for (const a of [x0, (x0 + fA) / 2, fA, (fA + x1) / 2, x1]) parts.push(`<text x="${X(a)}" y="${H - 12}" text-anchor="middle" font-size="11" fill="${mute}">${a.toFixed(1)}%</text>`);
-  parts.push(`<text x="${W - R}" y="${H - 1}" text-anchor="end" font-size="11" fill="${mute}">average BTC funding over the term (APR) →</text>`);
+  parts.push(`<text x="${W - R}" y="${H - 1}" text-anchor="end" font-size="11" fill="${mute}">average ${mkt.name} funding over the term (APR) →</text>`);
   parts.push(`<text x="${L}" y="${T - 5}" font-size="11" fill="${mute}">profit / loss (USDC)</text>`);
   parts.push(`<rect x="${L}" y="${T}" width="${W - L - R}" height="${H - T - B}" fill="transparent" id="phit"/>`);
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`); svg.innerHTML = parts.join("");
@@ -717,7 +772,7 @@ async function approve() {
 async function post() {
   const btn = $("actionBtn"); btn.disabled = true; btn.textContent = "Posting…";
   const f = readForm();
-  await tx("post offer", (c) => c.createOffer(MARKET, f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
+  await tx("post offer", (c) => c.createOffer(mkey(mkt), f.paysFixed, f.notional, f.margin, f.rate, f.tenor, f.expiry));
   await readBalances(); refreshAction();
   location.hash = "#offers";
 }
@@ -731,6 +786,7 @@ for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
 }
 updateSummary();
 (async () => {
+  try { await discoverMarkets(); } catch (e) { log(`market list: ${e.shortMessage || e.message}`); renderMarketChips(); }
   loadLive().catch((e) => log(`live funding unavailable: ${e.message}`));
   try { await loadMarket(); } catch (e) { $("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`; }
   try { await loadSwaps(); } catch (e) { log(e.shortMessage || e.message); }
