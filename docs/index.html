@@ -248,7 +248,7 @@
           </details>
           <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
         </div>
-        <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="h48" aria-pressed="true">Last 48 hours (hourly)</button><button class="chip" data-range="d" aria-pressed="false">Since Arc launch (daily)</button></div>
+        <div class="chips" id="rangeTabs" style="margin-top:12px"><button class="chip" data-range="d" aria-pressed="true">Since Arc launch (daily)</button><button class="chip" data-range="h48" aria-pressed="false">Last 48 hours (hourly)</button></div>
         <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="BTC funding against your rate; shaded zone is where you win"></svg><div class="tip" id="ttip"></div></div>
         <div class="hint">Shaded = where you win. Blue bars: hours (or days) you would have won, red: lost.</div>
       </div></div>
@@ -373,7 +373,7 @@ async function loadMarket() {
   drawChart(); renderRateChips(); updateSummary();
 }
 
-let hourly = [], tRange = "h48";
+let hourly = [], tRange = "d";
 const dailySeries = () => daily.map((x) => ({ label: dayStr(x.day) + " (UTC day)", short: dayStr(x.day).slice(5), rate: x.rate }));
 function drawChart() {
   drawHistory("chart", "tip", 260, dailySeries(), false);
