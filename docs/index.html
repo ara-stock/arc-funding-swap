@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Funding Swap on Arc</title>
-<meta name="description" content="Lock in perpetual funding, or take the other side. Peer-to-peer fixed-for-floating swaps on Hyperliquid BTC-PERP funding, settled in USDC on Arc mainnet.">
+<meta name="description" content="Lock in perpetual funding, or take the other side. Peer-to-peer fixed-for-floating swaps on Hyperliquid perp funding, settled in USDC on Arc mainnet.">
 <style>
   :root {
     --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --ink:#0f172a; --ink-2:#475569; --mute:#64748b;
@@ -230,7 +230,7 @@
           <div class="goalgrp">Take a view</div>
           <button class="choice" data-goal="up" data-side="1" aria-pressed="false"><b>📈 Funding will go up</b><span>You win if <span class="mname">BTC</span> funding averages above the rate in step 2.</span></button>
           <button class="choice" data-goal="down" data-side="0" aria-pressed="false"><b>📉 Funding will go down</b><span>You win if <span class="mname">BTC</span> funding averages below the rate in step 2.</span></button>
-          <div class="goalgrp">Which market?</div>
+          <div class="goalgrp" id="mktLabel">Which market?</div>
           <div class="chips big" id="mktChips" style="grid-column:1/-1;margin:0"></div>
         </div>
       </div></div>
@@ -485,7 +485,8 @@ function moveTag(m) { return m.sdApr >= 6 ? "moves a lot" : m.sdApr <= 4 ? "stea
 function renderMarketChips() {
   for (const id of ["mktChips", "mktChips2"]) {
     const box = $(id); box.textContent = "";
-    box.hidden = liveMarkets.length < 2;
+    box.style.display = liveMarkets.length < 2 ? "none" : "";
+    if (id === "mktChips") $("mktLabel").style.display = box.style.display;
     for (const m of liveMarkets) {
       const b = document.createElement("button"); b.className = "chip"; b.setAttribute("aria-pressed", String(m === mkt));
       b.innerHTML = `${m.name}<small>${moveTag(m)}</small>`;
