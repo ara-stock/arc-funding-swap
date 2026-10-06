@@ -114,6 +114,23 @@
   .choice em { background:var(--ink); color:var(--bg); }
   .choice[aria-pressed="true"] em { background:var(--acc); color:var(--acc-ink); }
   svg.payoff { width:100%; height:220px; display:block; margin:6px 0 4px; }
+
+  .live { display:flex; flex-wrap:wrap; gap:8px 22px; align-items:baseline; margin:2px 0 10px; }
+  .live .big { font-size:26px; font-weight:800; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+  .live .lbl { font-size:12px; color:var(--mute); display:block; }
+  .live .dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--pos); margin-right:6px; animation:pulse 1.6s infinite; }
+  @keyframes pulse { 50% { opacity:.3; } }
+  .slider { background:var(--surface-2); border-radius:12px; padding:14px 16px; margin-top:12px; }
+  .sliderhead { display:flex; justify-content:space-between; align-items:baseline; margin-bottom:6px; }
+  .sliderhead span { color:var(--ink-2); font-size:14px; font-weight:600; }
+  .sliderhead b { font-size:22px; font-variant-numeric:tabular-nums; color:var(--acc); }
+  input[type=range] { width:100%; accent-color:var(--acc); padding:0; border:0; background:transparent; height:28px; }
+  .sliderscale { display:flex; justify-content:space-between; font-size:11px; color:var(--mute); margin-top:-2px; }
+  .hl { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .hl .choice { text-align:center; padding:18px 14px; }
+  .hl .choice em { font-size:15px; padding:4px 12px; }
+  @media (max-width:560px) { .hl { grid-template-columns:1fr; } }
+  .chips.big .chip { padding:9px 16px; font-size:14px; }
   footer { padding:40px 0 60px; color:var(--mute); font-size:14px; }
   .toggle { font-size:13px; background:none; border:none; color:var(--acc); padding:0; font-weight:600; }
 </style>
@@ -192,42 +209,50 @@
 
   <section id="create">
     <div class="kicker">Create</div>
-    <h2>Post an offer in four choices</h2>
-    <p class="sub">You set the terms; someone else takes the other side. Your deposit stays in the contract until settlement, and you can cancel any time before the offer is taken.</p>
+    <h2>Make your call in three steps</h2>
+    <p class="sub">Look at where BTC funding is, drag your line, pick HIGH or LOW. Someone takes the other side, and the contract settles automatically. You can cancel any time before it is taken.</p>
     <div class="card">
       <div class="q"><div class="qn">1</div><div>
-        <div class="qtitle">High or low? Over the term, will BTC funding average above or below your fixed rate?</div>
-        <div class="choices">
-          <button class="choice low" data-side="0" aria-pressed="true"><em>▼ LOW</em><b>Funding stays below my rate</b><span>Receive a fixed rate, pay the actual funding. Locks in an income for basis traders.</span></button>
-          <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Funding goes above my rate</b><span>Pay a fixed rate, receive the actual funding. Wins if funding heats up.</span></button>
+        <div class="qtitle">Look at the rate, then set your line</div>
+        <div class="live" id="liveStrip"><div><span class="lbl"><span class="dot"></span>BTC funding right now</span><span class="big" id="liveNow">–</span></div><div><span class="lbl">Last 24 hours</span><span class="big" id="live24" style="font-size:20px">–</span></div><div><span class="lbl">Last 7 days</span><span class="big" id="live7" style="font-size:20px">–</span></div></div>
+        <div class="chips" id="rangeTabs"><button class="chip" data-range="h48" aria-pressed="true">Last 48 hours (hourly)</button><button class="chip" data-range="d" aria-pressed="false">Since Arc launch (daily)</button></div>
+        <div class="chart-wrap" style="margin-top:8px"><svg class="chart" id="tchart" style="height:220px" role="img" aria-label="BTC funding with your line"></svg><div class="tip" id="ttip"></div></div>
+        <div class="slider">
+          <div class="sliderhead"><span>Your line (fixed rate)</span><b id="aprBig">9.0% APR</b></div>
+          <input type="range" id="aprRange" min="-10" max="40" step="0.5" value="9" aria-label="Your fixed rate in percent APR">
+          <div class="sliderscale"><span>-10%</span><span>0%</span><span>10%</span><span>20%</span><span>30%</span><span>40%</span></div>
+          <div class="chips" id="rateChips"></div>
+          <input type="hidden" id="fApr" value="9.0"><div class="hint" id="fRateDay"></div>
         </div>
-        <div class="chart-wrap" style="margin-top:12px"><svg class="chart" id="tchart" style="height:200px" role="img" aria-label="Daily BTC funding with your fixed rate and win zone"></svg><div class="tip" id="ttip"></div></div>
-        <div class="hint">Daily BTC funding since Arc launch, annualised. <b style="color:var(--pos)">Blue</b> days were on your winning side of the line, <b style="color:var(--neg)">red</b> days on the losing side. What counts is the average over your term.</div>
       </div></div>
       <div class="q"><div class="qn">2</div><div>
-        <div class="qtitle">Fixed rate</div>
-        <div class="unit" style="max-width:280px"><input id="fApr" value="9.0" inputmode="decimal" aria-label="Fixed rate, annualised percent"><i>% APR</i></div>
-        <div class="chips" id="rateChips"></div>
-        <div class="hint" id="fRateDay"></div>
+        <div class="qtitle">Will funding average above or below your line?</div>
+        <div class="hl">
+          <button class="choice high" data-side="1" aria-pressed="false"><em>▲ HIGH</em><b>Above my line</b><span>You pay the fixed rate and receive the actual funding.</span></button>
+          <button class="choice low" data-side="0" aria-pressed="true"><em>▼ LOW</em><b>Below my line</b><span>You receive the fixed rate. Locks in an income for basis traders.</span></button>
+        </div>
       </div></div>
       <div class="q"><div class="qn">3</div><div>
         <div class="inrow">
-          <div><div class="qtitle">Size</div>
-            <div class="unit"><input id="fNotional" value="1000" inputmode="decimal" aria-label="Notional in USDC"><i>USDC</i></div>
-            <div class="chips" data-for="fNotional"><button class="chip" data-v="100">100</button><button class="chip" data-v="500">500</button><button class="chip" data-v="1000">1,000</button><button class="chip" data-v="2500">2,500</button></div>
+          <div><div class="qtitle">How big?</div>
+            <div class="chips big" data-for="fNotional"><button class="chip" data-v="100">$100</button><button class="chip" data-v="500">$500</button><button class="chip" data-v="1000">$1,000</button><button class="chip" data-v="2500">$2,500</button></div>
             <div class="hint">Funding is calculated on this amount. You don't need to hold it.</div></div>
-          <div><div class="qtitle">Term</div>
-            <div class="unit"><input id="fTenor" value="7" inputmode="numeric" aria-label="Term in days"><i>days</i></div>
-            <div class="chips" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
+          <div><div class="qtitle">For how long?</div>
+            <div class="chips big" data-for="fTenor"><button class="chip" data-v="1">1 day</button><button class="chip" data-v="3">3 days</button><button class="chip" data-v="7">1 week</button><button class="chip" data-v="14">2 weeks</button></div>
             <div class="hint">Starts at the next UTC midnight.</div></div>
         </div>
-      </div></div>
-      <div class="q"><div class="qn">4</div><div>
-        <div class="qtitle">Deposit = your maximum loss</div>
-        <div class="unit" style="max-width:280px"><input id="fMargin" value="10" inputmode="decimal" aria-label="Deposit in USDC"><i>USDC</i></div>
-        <div class="hint" id="marginHint"></div>
-        <details><summary>Advanced</summary>
-          <div style="max-width:280px;margin-top:10px"><label for="fExpiry">Offer stays open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
+        <div class="slider">
+          <div class="sliderhead"><span>Deposit: the most you can lose (and win)</span><b id="marginBig">3 USDC</b></div>
+          <input type="range" id="marginRange" min="1" max="100" step="1" value="3" aria-label="Deposit in USDC">
+          <div class="hint" id="marginHint"></div>
+        </div>
+        <details><summary>Custom amounts</summary>
+          <div class="inrow" style="margin-top:10px">
+            <div><label for="fNotional">Size</label><div class="unit"><input id="fNotional" value="1000" inputmode="decimal"><i>USDC</i></div></div>
+            <div><label for="fTenor">Term</label><div class="unit"><input id="fTenor" value="7" inputmode="numeric"><i>days</i></div></div>
+            <div><label for="fMargin">Deposit</label><div class="unit"><input id="fMargin" value="3" inputmode="decimal"><i>USDC</i></div></div>
+            <div><label for="fExpiry">Offer open for</label><div class="unit"><input id="fExpiry" value="24" inputmode="numeric"><i>hours</i></div></div>
+          </div>
         </details>
       </div></div>
       <div class="summary">
@@ -328,22 +353,27 @@ async function loadMarket() {
   drawChart(); renderRateChips(); updateSummary();
 }
 
-function drawChart() { drawHistory("chart", "tip", 260); drawHistory("tchart", "ttip", 200); }
-function drawHistory(svgId, tipId, H) {
-  if (!daily.length) return;
-  const apr = svgId === "tchart";                       // ticket chart speaks APR like the form
-  const fmt = (r, d) => apr ? (r * 365 * 100).toFixed(1) + "%" : (r * 100).toFixed(d) + "%";
-  const svg = $(svgId); if (!svg) return; const W = svg.clientWidth || 900, L = 56, R = 118, T = 14, B = 28;
+let hourly = [], tRange = "h48";
+const dailySeries = () => daily.map((x) => ({ label: dayStr(x.day) + " (UTC day)", short: dayStr(x.day).slice(5), rate: x.rate }));
+function drawChart() {
+  drawHistory("chart", "tip", 260, dailySeries(), false);
+  const ts = tRange === "h48" && hourly.length ? hourly : dailySeries();
+  drawHistory("tchart", "ttip", 220, ts, true);
+}
+// series: [{label, short, rate}] with rate expressed per day; ticket mode speaks APR and colours by win/lose
+function drawHistory(svgId, tipId, H, series, ticket) {
+  const svg = $(svgId); if (!svg || !series.length) return;
+  const W = svg.clientWidth || 900, L = 56, R = 118, T = 22, B = 28;
   svg.setAttribute("viewBox", `0 0 ${W} ${H}`);
+  const fmt = (r, d) => ticket ? (r * 365 * 100).toFixed(1) + "%" : (r * 100).toFixed(d) + "%";
   const fixed = currentFixed();
-  const vals = daily.map((x) => x.rate).concat([0, fixed ?? 0]);
+  const vals = series.map((x) => x.rate).concat([0, fixed ?? 0]);
   let max = Math.max(...vals), min = Math.min(...vals); const pad = (max - min || 1e-4) * 0.12; max += pad; min = Math.min(0, min - pad);
   const y = (r) => T + (max - r) / (max - min) * (H - T - B);
-  const slot = (W - L - R) / daily.length, bw = Math.min(24, Math.max(2, slot - 2));
+  const slot = (W - L - R) / series.length, bw = Math.min(24, Math.max(1.5, slot - (series.length > 40 ? 1 : 2)));
   const parts = [];
   const grid = cssVar("--grid"), mute = cssVar("--mute");
-  // "nice" ticks: steps of 1, 2 or 5 × 10^k (in %/day)
-  const k = apr ? 365 * 100 : 100;                     // label unit: % APR or % per day
+  const k = ticket ? 365 * 100 : 100;
   const rawStep = (max - min) * k / 4, mag = Math.pow(10, Math.floor(Math.log10(rawStep)));
   const tickStep = [1, 2, 5, 10].map((m) => m * mag).find((v) => v >= rawStep) / k;
   for (let v = Math.ceil(min / tickStep) * tickStep; v <= max + 1e-15; v += tickStep) {
@@ -351,48 +381,56 @@ function drawHistory(svgId, tipId, H) {
     parts.push(`<line x1="${L}" x2="${W - R}" y1="${yy}" y2="${yy}" stroke="${grid}" stroke-width="1"/>`);
     parts.push(`<text x="${L - 8}" y="${yy + 4}" text-anchor="end" font-size="11" fill="${mute}">${Math.abs(v) < tickStep / 2 ? "0" : lbl}%</text>`);
   }
+  if (fixed !== null && ticket) {
+    const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
+    parts.push(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="var(--acc)" opacity=".08" pointer-events="none"/>`);
+  }
   parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="${mute}" stroke-width="1"/>`);
-  const r = 4;
-  daily.forEach((x, i) => {
+  series.forEach((x, i) => {
     const cx = L + i * slot + (slot - bw) / 2, y0 = y(0), y1 = y(x.rate), h = Math.abs(y1 - y0), top = Math.min(y0, y1);
-    const color = apr && fixed !== null
-      ? ((x.rate > fixed) === (side === "1") ? "var(--pos)" : "var(--neg)")   // blue = this day was on your winning side
+    const color = ticket && fixed !== null
+      ? ((x.rate > fixed) === (side === "1") ? "var(--pos)" : "var(--neg)")
       : (x.rate >= 0 ? "var(--pos)" : "var(--neg)");
-    const rr = Math.min(r, h, bw / 2);
-    // rounded data-end, square at the baseline
+    const rr = Math.min(4, h, bw / 2);
     const d = x.rate >= 0
       ? `M${cx},${y0} V${top + rr} Q${cx},${top} ${cx + rr},${top} H${cx + bw - rr} Q${cx + bw},${top} ${cx + bw},${top + rr} V${y0} Z`
       : `M${cx},${y0} V${top + h - rr} Q${cx},${top + h} ${cx + rr},${top + h} H${cx + bw - rr} Q${cx + bw},${top + h} ${cx + bw},${top + h - rr} V${y0} Z`;
     parts.push(`<path d="${d}" fill="${color}"/>`);
     parts.push(`<rect x="${L + i * slot}" y="${T}" width="${slot}" height="${H - T - B}" fill="transparent" data-i="${i}"/>`);
   });
-  const avg = daily.reduce((s, x) => s + x.rate, 0) / daily.length;
+  const avg = series.reduce((a, x) => a + x.rate, 0) / series.length;
   parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(avg)}" y2="${y(avg)}" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
-  if (fixed !== null) {
-    const zoneTop = side === "1" ? T : y(fixed), zoneH = side === "1" ? y(fixed) - T : (H - B) - y(fixed);
-    parts.unshift(`<rect x="${L}" y="${zoneTop}" width="${W - L - R}" height="${Math.max(0, zoneH)}" fill="var(--acc)" opacity=".08" pointer-events="none"/>`);
-    if (apr) {
-      const wins = daily.filter((x) => (x.rate > fixed) === (side === "1")).length;
-      parts.push(`<text x="${L + 6}" y="${T + 12}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins} of ${daily.length} past days on your side</text>`);
-    }
-    parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="2" stroke-linecap="round" pointer-events="none"/>`);
+  if (fixed !== null) parts.push(`<line x1="${L}" x2="${W - R}" y1="${y(fixed)}" y2="${y(fixed)}" stroke="var(--acc)" stroke-width="${ticket ? 3 : 2}" stroke-linecap="round" pointer-events="none"/>`);
+  if (ticket && fixed !== null) {
+    const wins = series.filter((x) => (x.rate > fixed) === (side === "1")).length;
+    const unit = tRange === "h48" && hourly.length ? "hours" : "days";
+    parts.push(`<text x="${L + 4}" y="${T - 8}" font-size="12" font-weight="700" fill="var(--ink)">${side === "1" ? "▲ HIGH" : "▼ LOW"} at ${(fixed * 365 * 100).toFixed(1)}%: ${wins} of the last ${series.length} ${unit} were on your side</text>`);
   }
-  // direct labels at the right end; nudge apart when the two lines are close
   let ya = y(avg), yf = fixed !== null ? y(fixed) : null;
   if (yf !== null && Math.abs(ya - yf) < 14) { const mid = (ya + yf) / 2; if (ya <= yf) { ya = mid - 7; yf = mid + 7; } else { ya = mid + 7; yf = mid - 7; } }
   parts.push(`<text x="${W - R + 6}" y="${ya + 4}" font-size="11" fill="var(--ink-2)">avg ${fmt(avg, 3)}</text>`);
-  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="11" fill="var(--acc)">fixed ${fmt(fixed, 3)}</text>`);
-  const step = Math.max(1, Math.ceil(daily.length / 6));
-  daily.forEach((x, i) => { if (i % step === 0 || i === daily.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${dayStr(x.day).slice(5)}</text>`); });
+  if (yf !== null) parts.push(`<text x="${W - R + 6}" y="${yf + 4}" font-size="12" font-weight="700" fill="var(--acc)">${ticket ? "your line " : "fixed "}${fmt(fixed, 3)}</text>`);
+  const every = Math.max(1, Math.ceil(series.length / 6));
+  series.forEach((x, i) => { if (i % every === 0 || i === series.length - 1) parts.push(`<text x="${L + i * slot + slot / 2}" y="${H - 8}" text-anchor="middle" font-size="11" fill="${mute}">${x.short}</text>`); });
   svg.innerHTML = parts.join("");
   svg.querySelectorAll("rect[data-i]").forEach((el) => {
     el.addEventListener("mousemove", (ev) => {
-      const x = daily[Number(el.dataset.i)], tip = $(tipId), box = svg.parentElement.getBoundingClientRect();
-      tip.textContent = `${dayStr(x.day)} · ${pct(x.rate)} / day · ${aprOf(x.rate)} ann.`;
+      const x = series[Number(el.dataset.i)], tip = $(tipId), box = svg.parentElement.getBoundingClientRect();
+      tip.textContent = `${x.label} · ${aprOf(x.rate)} APR (${pct(x.rate)} / day)`;
       tip.style.left = Math.min(ev.clientX - box.left + 12, box.width - tip.offsetWidth - 4) + "px"; tip.style.top = (ev.clientY - box.top - 34) + "px"; tip.style.opacity = 1;
     });
     el.addEventListener("mouseleave", () => ($(tipId).style.opacity = 0));
   });
+}
+// live hourly funding straight from Hyperliquid's public API (read-only)
+async function loadLive() {
+  const r = await fetch("https://api.hyperliquid.xyz/info", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ type: "fundingHistory", coin: "BTC", startTime: Date.now() - 48 * 3600e3 }) });
+  const rows = await r.json();
+  hourly = rows.map((x) => { const d = new Date(Math.round(x.time / 3600e3) * 3600e3); return { label: d.toISOString().slice(5, 13).replace("T", " ") + ":00 UTC", short: d.toISOString().slice(11, 13) + ":00", rate: Number(x.fundingRate) * 24 }; });
+  if (!hourly.length) return;
+  const now = hourly[hourly.length - 1].rate, h24 = hourly.slice(-24).reduce((a, x) => a + x.rate, 0) / Math.min(24, hourly.length);
+  $("liveNow").textContent = aprOf(now) + " APR"; $("live24").textContent = aprOf(h24);
+  renderRateChips(); drawChart();
 }
 window.addEventListener("resize", drawChart);
 $("tblToggle").onclick = () => { const w = $("tblWrap"); w.hidden = !w.hidden; $("tblToggle").textContent = w.hidden ? "Show as table" : "Hide table"; };
@@ -479,16 +517,21 @@ function suggestedMargin() {
 }
 function avg7() { return daily.length ? daily.slice(-7).reduce((a, x) => a + x.rate, 0) / Math.min(7, daily.length) : null; }
 function renderRateChips() {
-  const a = avg7(); const box = $("rateChips"); box.textContent = "";
-  if (a === null) return;
-  const base = Math.round(a * 365 * 1000) / 10;
-  for (const [label, v] of [[`7-day avg ${base.toFixed(1)}%`, base], [`${(base - 2).toFixed(1)}%`, base - 2], [`${(base + 2).toFixed(1)}%`, base + 2]]) {
-    const b = document.createElement("button"); b.className = "chip"; b.textContent = label;
-    b.onclick = () => { $("fApr").value = v.toFixed(1); aprEdited = true; updateSummary(); };
+  const box = $("rateChips"); box.textContent = "";
+  const a = avg7(); if (a !== null) $("live7").textContent = aprOf(a);
+  const opts = [];
+  if (hourly.length) opts.push(["Right now", hourly[hourly.length - 1].rate * 365 * 100]);
+  if (hourly.length) opts.push(["Last 24h", hourly.slice(-24).reduce((s2, x) => s2 + x.rate, 0) / Math.min(24, hourly.length) * 365 * 100]);
+  if (a !== null) opts.push(["Last 7 days", a * 365 * 100]);
+  for (const [label, v] of opts) {
+    const b = document.createElement("button"); b.className = "chip"; b.textContent = `${label} ${v.toFixed(1)}%`;
+    b.onclick = () => setApr(Math.round(v * 2) / 2);
     box.appendChild(b);
   }
-  if (!aprEdited) $("fApr").value = base.toFixed(1);
+  for (const d of [-2, 2]) { const b = document.createElement("button"); b.className = "chip"; b.textContent = `${d > 0 ? "+" : "−"}2%`; b.onclick = () => setApr(Number($("fApr").value) + d); box.appendChild(b); }
+  if (!aprEdited && a !== null) setApr(Math.round(a * 365 * 100 * 2) / 2, true);
 }
+function setApr(v, auto) { v = Math.max(-10, Math.min(40, v)); $("fApr").value = v.toFixed(1); if (!auto) aprEdited = true; updateSummary(); }
 function syncChips() {
   document.querySelectorAll(".chips[data-for]").forEach((box) => {
     const v = $(box.dataset.for).value;
@@ -499,7 +542,9 @@ function syncChips() {
 function updateSummary() {
   const sm = suggestedMargin();
   if (!marginEdited && sm !== null) $("fMargin").value = String(sm);
-  $("marginHint").textContent = sm !== null ? `Suggested ${sm} USDC: covers funding missing your rate by about 11% APR over the term. Max 100.` : "";
+  $("aprRange").value = $("fApr").value; $("aprBig").textContent = `${Number($("fApr").value).toFixed(1)}% APR`;
+  $("marginRange").value = $("fMargin").value; $("marginBig").textContent = `${Number($("fMargin").value)} USDC`;
+  $("marginHint").textContent = sm !== null ? `Suggested ${sm} USDC for this size and term. Bigger deposit = your call can be wrong by more before it is capped. Max 100.` : "";
   const f = currentFixed(), n = Number($("fNotional").value), m = Number($("fMargin").value), t = parseInt($("fTenor").value, 10);
   const pays = side === "1";
   syncChips();
@@ -576,7 +621,9 @@ function drawPayoff() {
 window.addEventListener("resize", () => drawPayoff());
 document.querySelectorAll(".choice").forEach((c) => (c.onclick = () => { side = c.dataset.side; updateSummary(); }));
 document.querySelectorAll(".chips[data-for]").forEach((box) => box.querySelectorAll(".chip").forEach((c) => (c.onclick = () => { $(box.dataset.for).value = c.dataset.v; updateSummary(); })));
-$("fApr").addEventListener("input", () => { aprEdited = true; updateSummary(); });
+$("aprRange").addEventListener("input", (e) => setApr(Number(e.target.value)));
+$("marginRange").addEventListener("input", (e) => { $("fMargin").value = e.target.value; marginEdited = true; updateSummary(); });
+document.querySelectorAll("#rangeTabs .chip").forEach((b) => (b.onclick = () => { tRange = b.dataset.range; document.querySelectorAll("#rangeTabs .chip").forEach((c) => c.setAttribute("aria-pressed", String(c === b))); drawChart(); }));
 $("fMargin").addEventListener("input", () => { marginEdited = true; updateSummary(); });
 ["fNotional", "fTenor", "fExpiry"].forEach((id) => $(id).addEventListener("input", updateSummary));
 
@@ -643,6 +690,7 @@ for (const [id, addr] of [["Oracle", CFG.oracle], ["Swap", CFG.swap]]) {
 }
 updateSummary();
 (async () => {
+  loadLive().catch((e) => log(`live funding unavailable: ${e.message}`));
   try { await loadMarket(); } catch (e) { $("chartNote").textContent = `Could not read the oracle: ${e.shortMessage || e.message}`; }
   try { await loadSwaps(); } catch (e) { log(e.shortMessage || e.message); }
 })();
