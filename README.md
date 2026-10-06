@@ -15,6 +15,11 @@ in a fixed rate for the next few days. A trader who expects funding to rise take
 | FundingRateSwap | [`0x050d05E0e265F412Ed9064518942a6B1d0Bbee39`](https://explorer.arc.io/address/0x050d05E0e265F412Ed9064518942a6B1d0Bbee39) |
 | Publisher | `0xDd14e65957eF26fFa2174C2E3C39Bd3eE2B084ED` |
 
+Both contracts are source-verified on Sourcify (exact match):
+[oracle](https://repo.sourcify.dev/contracts/full_match/5042/0xb2FF125422a9ED3fd42c080B3548b4071AEC8Be6/) ·
+[swap](https://repo.sourcify.dev/contracts/full_match/5042/0x050d05E0e265F412Ed9064518942a6B1d0Bbee39/).
+The oracle holds the daily index from 2026-09-16 onwards, and every value matches a recomputation from Hyperliquid's API.
+
 ## Why on-chain
 
 Two people who don't know each other lock margin and settle by a rule that neither can change
